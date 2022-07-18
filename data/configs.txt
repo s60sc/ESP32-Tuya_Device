@@ -1,1 +1,23 @@
+restart::99:na
+ST_SSID::0:Wifi SSID name
+ST_Pass::0: Wifi SSID password
+ST_ip::0:Static IP address
+ST_gw::0:Router IP address
+ST_sn:255.255.255.0:0:Router subnet
+ST_ns1::0:DNS server
+ST_ns2::0:Alt DNS server
+AP_ip::0:AP IP Address if not 192.168.4.1
+AP_sn::0:AP subnet
+AP_gw::0:AP gateway
+allowAP:1:0:Allow AP Fallback if no router (0/1)
+AP_Pass::0:AP password
+Auth_User::0:Optional user name for web page login
+Auth_Pass::0:Optional password for web page login
+hostName::0:Device host name
+wifiTimeoutSecs:30:0:WiFi connect timeout (secs)
+wifiTxPin::0:UART1 Tx Pin used to connect to external wifi module
+wifiRxPin::0:UART1 Rx Pin used to connect to external wifi module
+
+
+
 
