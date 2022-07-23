@@ -15,8 +15,8 @@ Auth_User::0:Optional user name for web page login
 Auth_Pass::0:Optional password for web page login
 hostName::0:Device host name
 wifiTimeoutSecs:30:0:WiFi connect timeout (secs)
-wifiTxPin::0:UART1 Tx Pin used to connect to external wifi module
-wifiRxPin::0:UART1 Rx Pin used to connect to external wifi module
+wifiTxPin:4:0:UART1 Tx Pin used to connect to external wifi module
+wifiRxPin:3:0:UART1 Rx Pin used to connect to external wifi module
 
 
 
