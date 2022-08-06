@@ -1,23 +1,54 @@
-restart::99:na
-ST_SSID::0:Wifi SSID name
-ST_Pass::0: Wifi SSID password
-ST_ip::0:Static IP address
-ST_gw::0:Router IP address
-ST_sn:255.255.255.0:0:Router subnet
-ST_ns1::0:DNS server
-ST_ns2::0:Alt DNS server
-AP_ip::0:AP IP Address if not 192.168.4.1
-AP_sn::0:AP subnet
-AP_gw::0:AP gateway
-allowAP:1:0:Allow AP Fallback if no router (0/1)
-AP_Pass::0:AP password
-Auth_User::0:Optional user name for web page login
-Auth_Pass::0:Optional password for web page login
-hostName::0:Device host name
-wifiTimeoutSecs:30:0:WiFi connect timeout (secs)
-wifiTxPin:4:0:UART1 Tx Pin used to connect to external wifi module
-wifiRxPin:3:0:UART1 Rx Pin used to connect to external wifi module
-
+restart~~99~na
+ST_SSID~~0~Wifi SSID name
+ST_Pass~~0~ Wifi SSID password
+ST_ip~~0~Static IP address
+ST_gw~~0~Router IP address
+ST_sn~255.255.255.0~0~Router subnet
+ST_ns1~~0~DNS server
+ST_ns2~~0~Alt DNS server
+AP_ip~~0~AP IP Address if not 192.168.4.1
+AP_sn~~0~AP subnet
+AP_gw~~0~AP gateway
+allowAP~1~0~Allow AP Fallback if no router (0/1)
+AP_Pass~~0~AP password
+Auth_User~~0~Optional user name for web page login
+Auth_Pass~~0~Optional password for web page login
+hostName~~0~Device host name
+wifiTimeoutSecs~30~0~WiFi connect timeout (secs)
+currTemp~19~98~na
+outputOn~1~98~na
+fault~0~98~na
+switchDisp~1~98~na
+tgtTemp~20~98~na
+progMode~0~98~na
+childLock~0~98~na
+soundOn~0~98~na
+tempCal~-0.2~98~na
+roomMax~25~98~na
+tempSensor~0~98~na
+frost~0~98~na
+doReset~0~98~na
+backLight~2~98~na
+daySetting~0~98~na
+opReverse~0~98~na
+tempLash~0.1~98~na
+floorMax~27~98~na
+slotTime1~00:00~98~na
+slotTemp1~5~98~na
+slotTime2~00:00~98~na
+slotTemp2~5~98~na
+slotTime3~00:00~98~na
+slotTemp3~5~98~na
+slotTime4~00:00~98~na
+slotTemp4~5~98~na
+slotTime5~00:00~98~na
+slotTemp5~5~98~na
+slotTime6~00:00~98~na
+slotTemp6~5~98~na
+slotTime7~00:00~98~na
+slotTemp7~5~98~na
+slotTime8~00:00~98~na
+slotTemp8~5~98~na
 
 
 

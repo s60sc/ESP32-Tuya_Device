@@ -1,0 +1,528 @@
+<!DOCTYPE html>     
+<html xmlns="http://www.w3.org/1999/xhtml">     
+  <head>
+    <meta charset="UTF-8"/>     
+    <title>Floor Thermostat</title>
+   <script src="/web?jquery.min.js"></script>
+    <script src="/web?common.js"></script>
+  </head>
+  
+  <style>
+    button {
+      background: transparent;
+      border: none;
+      font-size:0px;
+    }
+    
+    input[type="number"], input[type="time"] {
+      font-size:30px;
+      border:0px;
+    }
+    input[type='number']{
+      width: 110px;
+      text-align: center;
+    } 
+    input[type=number]::-webkit-inner-spin-button {
+      opacity: 1
+    }
+    
+    .cell1 {
+      grid-area: a;
+      color: tan;
+      font-size: 50px;
+      background-image: url( '/web?wood.svg' );
+      justify-items: center;
+      align-items: center;
+      height: 60px
+    }
+    .cell2 {
+      grid-area: b;
+    }
+    .cell3 {
+      grid-area: d;
+    }
+    .cell4 {
+      grid-area: e;
+    }
+    .cell5 {
+      grid-area: f;
+    }
+    .cell6 {
+      grid-area: g;
+    }
+    .cell7 {
+      grid-area: h;
+    }
+
+    .grid-container1 {
+      grid-template-columns: 150px 100px 75px 75px;
+      grid-template-areas: 
+        'a a a a'
+        'b b b b'
+        'd . f f'
+        'd e f f'
+        'd . f f'
+        'd . f f'
+        '. . g h';
+    }
+    
+    .grid-container2 {
+      grid-template-columns: 100px 100px 100px 100px;
+    }
+    
+    .grid-container3 {
+      display: grid;
+      grid-template-columns: 400px;
+    }
+
+    .grid-container1, .grid-container2, .grid-container3 > div {
+      display: grid;
+      background-color: none;
+      text-align: center;
+      font-size: 30px;
+      border: 0px solid black;
+      font: Arial;
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+    
+    .grid-container4 {
+       display: grid;
+       grid-template-columns: 100px 150px 120px;
+     }
+     
+    .grid-container5 {
+       display: grid;
+       grid-template-columns: 250px 140px;
+     }
+    
+    .grid-container4, .grid-container5 > div {
+      background-color: none;
+      font-size: 30px;
+      text-align: left;
+      font: Arial;
+      border: 0px solid black;
+    }
+    
+    #arrowAnim {
+      width: 50%;
+      height: 50%;
+    }
+
+    .arrow {
+      width: 15px;
+      height: 15px;
+      border: 5px solid;
+      border-color: red transparent transparent red;
+      transform: rotate(135deg);
+    }
+
+    .arrowSliding {
+      position: absolute;
+      -webkit-animation: slide 1s linear infinite; 
+    }
+
+    @-webkit-keyframes slide {
+       0% { opacity:1; transform: translateX(0vw); }
+       33% { opacity:0.7; transform: translateX(2vw); }
+       67% { opacity:0.3; transform: translateX(4vw); }
+       100% { opacity:0.1; transform: translateX(6vw); }
+    }
+
+    .panel {
+      padding: 0 18px;
+      display: none;
+      background-color: white;
+      overflow: hidden;
+    }
+    
+    rect {
+       fill: silver;
+       width: 100%;
+       height: 100%; 
+       x: 0;
+       y: 0;
+       rx: 15%;
+     }
+    
+    /*
+    rect:hover {
+      fill: red;
+    }
+    
+    rect:active {
+      fill: green;
+    }
+    */
+    
+    text {
+      pointer-events: none;
+    }
+
+  </style>
+  
+  <body>
+    <div class="grid-container1">
+      <div class="cell1">
+         <button type='submit' style="color:tan; font-size:40px"; value='TSN.htm' class='web-action'>Floor Thermostat</button>
+      </div>
+      <div class="cell2">&nbsp</div>
+      <div class="cell3">
+          <svg width="120" height="100">
+            <rect/>
+            <text x="50%" y="30%" font-size="30" fill="white">Current</text>
+            <text id="currTemp" x="50%" y="70%" font-size="40" fill="black"></text>
+          </svg>
+      </div>
+      <div class="cell4">
+        <div id="arrowAnim">
+          <div class="arrowSliding">
+            <div class="arrow"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cell5">
+        <svg width="120" height="100">
+          <rect/>
+          <text x="50%" y="30%" font-size="30" fill="white">Target</text>
+          <text id="tgtTemp" x="50%" y="70%" font-size="40" fill="black"></text>
+        </svg>
+      </div>
+      <div class="cell6">
+        <button onclick="changeTgtTemp(-1)">
+          <svg width="40" height="30">
+            <rect style="fill:skyblue"/>
+            <text x="50%" y="50%" font-size="25" fill="white">-</text>
+          </svg>
+        </button>
+      </div>
+      <div class="cell7">
+        <button onclick="changeTgtTemp(1)">
+          <svg width="40" height="30">
+            <rect style="fill:tomato"/>
+            <text x="50%" y="50%" font-size="25" fill="white">+</text>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <br/><br/>
+    <div class="grid-container2">
+      <div>
+        <button onclick="onOff('progMode', true)">
+          <svg width="90" height="90">
+            <rect/>
+            <text x="50%" y="30%" font-size="20" fill="white">Mode</text>
+            <text id="progMode" x="50%" y="70%" font-size="30" fill="black"></text>
+          </svg>
+        </button>
+      </div>
+      <div>
+        <button onclick="onOff('frost', true)">
+          <svg width="90" height="90">
+            <rect/>
+            <text x="50%" y="30%" font-size="20" fill="white">Frost</text>
+            <text id="frost" x="50%" y="70%" font-size="30" fill="black"></text>
+          </svg>
+        </button>
+      </div>
+      <div>
+        <button onclick="onOff('switchDisp', true)">
+          <svg width="90" height="90">
+            <rect/>
+            <text x="50%" y="30%" font-size="20" fill="white">Switch</text>
+            <text id="switchDisp" x="50%" y="70%"font-size="30" fill="black"></text>
+          </svg>
+        </button>
+      </div>
+      <div>
+        <button onclick="onOff('childLock', true)">
+          <svg width="90" height="90">
+            <rect/>
+            <text x="50%" y="30%" font-size="20" fill="white">Lock</text>
+            <text id="childLock" x="50%" y="70%" font-size="30" fill="black"></text>
+          </svg>
+        </button>
+      </div>
+      <div>&nbsp </div>
+    </div>
+    <div class="grid-container3">
+      <div>
+        <button class="accordion">
+          <svg width="390" height="50">
+            <rect style="rx:3%"/>
+            <text x="50%" y="50%" font-size="30" fill="black">Schedule</text>
+          </svg>
+        </button>
+        <div class="panel">
+          <div class="grid-container4">
+            <div>Slot</div>
+            <div>Time</div>
+            <div>Temp</div>
+            <div>W1:</div>
+            <div><input type="time" id="slotTime1"></div>
+            <div><input type="number" id="slotTemp1" min="5" max="27" class="inNum"></div>
+            <div>W2:</div>
+            <div><input type="time" id="slotTime2"></div>
+            <div><input type="number" id="slotTemp2" min="5" max="27" class="inNum"></div>
+            <div>W3:</div>
+            <div><input type="time" id="slotTime3"></div>
+            <div><input type="number" id="slotTemp3" min="5" max="27" class="inNum"></div>
+            <div>W4:</div>
+            <div><input type="time" id="slotTime4"></div>
+            <div><input type="number" id="slotTemp4" min="5" max="27" class="inNum"></div>
+            <div>W5:</div>
+            <div><input type="time" id="slotTime5"></div>
+            <div><input type="number" id="slotTemp5" min="5" max="27" class="inNum"></div>
+            <div>W6:</div>
+            <div><input type="time" id="slotTime6"></div>
+            <div><input type="number" id="slotTemp6" min="5" max="27" class="inNum"></div>
+            <div>R1:</div>
+            <div><input type="time" id="slotTime7"></div>
+            <div><input type="number" id="slotTemp7" min="5" max="27" class="inNum"></div>
+            <div>R2:</div>
+            <div><input type="time" id="slotTime8"></div>
+            <div><input type="number" id="slotTemp8" min="5" max="27" class="inNum"></div>
+          </div>
+          <div class="grid-container3">
+            <button class='update-action'>
+              <svg width="300" height="50">
+                <rect style="rx:5%"/>
+                <text x="50%" y="50%" font-size="20" fill="white">Apply</text>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <br/>
+      <div>
+        <button class="accordion">
+          <svg width="390" height="50">
+            <rect style="rx:3%"/>
+            <text x="50%" y="50%" font-size="30" fill="black">Settings</text>
+          </svg>
+        </button>
+        <div class="panel">
+          <div class="grid-container5">
+            <div>Max Floor &#x2103;:</div>
+            <div><input type="number" id="floorMax" min="5" max="27" class='tempAttrs'></div>
+            <div>Max Room &#x2103;:</div>
+            <div><input type="number" id="roomMax" min="5" max="25" class='tempAttrs'></div>
+            <div>Calibration &#x2103;:</div>
+            <div><input type="number" id="tempCal" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
+            <div>Backlash &#x2103;:</div>
+            <div><input type="number" id="tempLash" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
+            <div>Day Setting:</div>
+            <div>
+              <button onclick="changeDay('daySetting', true)">
+                <svg width="80" height="32">
+                  <rect style="rx:10%"/>
+                  <text x="50%" y="50%" font-size="25" fill="white" id="daySetting">7</text>
+                </svg>
+              </button>
+            </div>
+            <div>Back Light:</div>
+            <div>
+              <button onclick="changeLight('backLight', true)">
+                <svg width="80" height="32">
+                  <<rect style="rx:10%"/>
+                  <text x="50%" y="50%" font-size="25" fill="white" id="backLight">Mid</text>
+                </svg>
+              </button>
+            </div>
+            <div>Temp Sensor:</div>
+            <div>
+              <button onclick="changeSensor('tempSensor', true)">
+                <svg width="80" height="32">
+                  <rect style="rx:10%"/>
+                  <text x="50%" y="50%" font-size="25" fill="white" id="tempSensor">Floor</text>
+                </svg>
+              </button>
+            </div>
+            <div>Reset:</div>
+            <div>
+              <button onclick ="doReset()">
+                <svg width="80" height="32">
+                  <rect style="rx:10%"/>
+                  <text x="50%" y="50%" font-size="25" fill="white" id="doReset">!</text>
+                </svg>
+              </button>
+            </div>
+            <!--
+            <div>Output Reverse:</div>
+            <div>
+              <button onclick="onOff('opReverse', true)">
+                <svg width="80" height="32">
+                  <rect style="rx:10%"/>
+                  <text x="50%" y="50%" font-size="25" fill="white" id="opReverse">Off</text>
+                </svg>
+              </button>
+            </div>
+            <div>Sound:</div>
+            <div>
+              <button onclick="onOff('soundOn', true)">
+                <svg width="80" height="32">
+                  <rect style="rx:10%"/>
+                  <text x="50%" y="50%" font-size="25" fill="white" id="soundOn">Off</text>
+                </svg>
+              </button>
+            </div>
+            -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+    
+      let acc = document.getElementsByClassName("accordion");
+      for (let i = 0; i < acc.length; i++) {
+        acc[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+          if (panel.style.display === "block") panel.style.display = "none";
+          else panel.style.display = "block";
+        });
+      }
+
+      let isOn = true;
+      let statusData;
+      let minTemp;
+      let maxTemp;
+      
+      function processStatus(indata) {
+        // callback from common.js with received json
+        statusData = indata;
+        setTempRanges();
+        for (key in statusData) {
+          if (key == "switchDisp") onOff(key, false);
+          else if (key == "currTemp") setCurrTemp();
+          else if (key == "outputOn") changeOutput(statusData[key]);
+          else if (key == "tgtTemp") changeTgtTemp(0);
+          else if (key == "frost") onOff(key, false);
+          else if (key == "progMode") onOff(key, false);
+          else if (key == "daySetting") changeDay(key, false);
+          else if (key == "backLight") changeLight(key, false);
+          else if (key == "tempSensor") changeSensor(key, false);
+          else if (key == "childLock") onOff(key, false);
+          else if (key == "soundOn") onOff(key, false);
+          else if (key == "opReverse") onOff(key, false);
+          else if (key == "doReset") $('#doReset').text("!"); 
+        }
+      }
+      
+      function setTempRanges() {
+        // dynamically set temperature ranges
+        minTemp = 5; // fixed
+        maxTemp = (statusData['tempSensor'] == 1) ? statusData['floorMax'] : statusData['roomMax'];
+        const collection = document.getElementsByClassName("inNum");
+        for (let i = 0; i < collection.length; i++) {
+          collection[i].min = minTemp;
+          collection[i].max = maxTemp;
+        }
+        if (statusData["tgtTemp"] > maxTemp) {
+          statusData["tgtTemp"] = maxTemp;
+          $('#tgtTemp').text(maxTemp + "\u2103");
+        }
+      }
+      
+      function onOff(key, doUpdate) {
+        let val = statusData[key];
+        if (doUpdate) {
+          val = +!val;
+          statusData[key] = val ? 1 : 0;
+        } 
+        if (val == 1) $('#'+key).text("On");
+        else $('#'+key).text("Off");
+        if (key == "progMode") {
+          if (val == 1) $('#'+key).text("Auto");
+          else $('#'+key).text("Home")
+        }
+        if (key == "switchDisp") {
+          isOn = (statusData[key] == 1) ? true : false;
+          changeTgtTemp(0);
+        }
+        if (doUpdate) $.ajax({url: baseHost + '/control?' + key + '=' + val}); 
+      }
+      
+      function setCurrTemp() {
+        if (statusData['fault'] == 1) $('#currTemp').text("ERR") 
+        else $('#currTemp').text(statusData[key]+"\u2103");
+      }
+
+      function changeTgtTemp(incVal) {
+        if (isOn) {
+          let newTemp = +statusData["tgtTemp"] + incVal;
+          if (newTemp <= maxTemp && newTemp >= minTemp) {
+            statusData["tgtTemp"] = newTemp;
+            $('#tgtTemp').text(newTemp + "\u2103");
+            if (incVal != 0) $.ajax({url: baseHost + '/control?tgtTemp=' + newTemp})
+          } 
+        } else {
+          $('#tgtTemp').text("OFF");
+          changeOutput(0);
+        }
+      }
+      
+      function changeOutput(isHeating) {
+        document.getElementById("arrowAnim").style.display = (isHeating == 1) ? "block" : "none";
+      }
+      
+      function changeDay(key, doUpdate) {
+        let newval = +statusData[key];
+        if (doUpdate) newval = +newval + 1;
+        if (newval == 3) newval = 0;
+        if (newval == 0) $('#'+key).text("7");
+        else if (newval == 1) $('#'+key).text("6+1");
+        else if (newval == 2) $('#'+key).text("5+2");
+        if (doUpdate) {
+          statusData[key] = newval;
+          $.ajax({url: baseHost + '/control?' + key + '=' + newval});
+        }
+      }
+      
+      function changeLight(key, doUpdate) {
+        let newval = statusData[key];
+        if (doUpdate) newval = +newval + 1;
+        if (newval == 4) newval = 0;
+        if (newval == 0) $('#'+key).text("Off");
+        else if (newval == 1) $('#'+key).text("Low");
+        else if (newval == 2) $('#'+key).text("Mid");
+        else if (newval == 3) $('#'+key).text("High");
+        if (doUpdate) {
+          statusData[key] = newval;
+          $.ajax({url: baseHost + '/control?' + key + '=' + newval});
+        }
+      }
+      
+      function changeSensor(key, doUpdate) {
+        let newval = statusData[key];
+        if (doUpdate) newval = +newval + 1;
+        if (newval == 3) newval = 0;
+        if (newval == 0) $('#'+key).text("Room");
+        else if (newval == 1) $('#'+key).text("Floor");
+        else if (newval == 2) $('#'+key).text("Both");
+        if (doUpdate) {
+          statusData[key] = newval;
+          setTempRanges();
+          $.ajax({url: baseHost + '/control?' + key + '=' + newval});
+        }
+      }
+      
+      function doReset() {
+        if (window.confirm("Are you sure?")) $.ajax({url: baseHost + '/control?doReset=1'}); 
+      }
+      
+      $('.tempAttrs').click(function() {
+          statusData[this.id] = this.value;
+          setTempRanges();
+          $.ajax({url: baseHost + '/control?' + this.id + '=' + this.value}); 
+        }
+      );
+      
+      function tsnPage() {
+        $.ajax({url: baseHost + '/web?TSN.htm'}); 
+      }
+      
+    </script>
+  </body>
+</html>

@@ -4,7 +4,6 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>TuyaSniffer</title>
-    <script src='/web?configs.js'></script>
     <STYLE type="text/css">
         th, td, p, input, button {
           font:20px 'Arial';
@@ -50,6 +49,9 @@
       <td><a href="/web?OTA.htm"><button class="fixWidth">OTA Update</button></a></td>
       </tr>
     </table>
+    <div class="settings_group">
+      <p id='configTable'></p>
+    </div>
     <br/>
     <form onsubmit="return sendCmd()">
       <input style="width:90%;" placeholder="Enter command for device and press return" id='txtCmd'/> 
@@ -95,5 +97,6 @@
         return false;
       }
     </script>
+    <script src='/web?configs.js'></script>
   </body>
 </html>
