@@ -11,7 +11,7 @@ AP_sn~~0~AP subnet
 AP_gw~~0~AP gateway
 allowAP~1~0~Allow AP Fallback if no router (0/1)
 AP_Pass~~0~AP password
-Auth_User~~0~Optional user name for web page login
+Auth_Name~~0~Optional user name for web page login
 Auth_Pass~~0~Optional password for web page login
 hostName~~0~Device host name
 wifiTimeoutSecs~30~0~WiFi connect timeout (secs)

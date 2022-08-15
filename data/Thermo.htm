@@ -181,18 +181,44 @@
        rx: 15%;
      }
     
-    /*
     rect:hover {
-      fill: red;
+      fill: DarkGrey;
     }
     
     rect:active {
-      fill: green;
+      fill: DarkSeaGreen;
     }
-    */
   
     text {
       pointer-events: none;
+    }
+    
+    input, #log  {
+        font:20px 'Courier New';
+        font-weight:bold;
+        color: navy;
+      }
+    #log {
+      height:90%;
+      width:90%;
+      border:2px solid #ccc;
+      overflow:auto;
+    }
+    
+    .settings_group td {
+      border: solid 2px #ddd;
+    }
+    
+    th, td {
+      border-collapse: collapse;
+      padding: 2px 3px;
+      text-align: left;
+    }
+    table {
+      border: 0px
+    }
+    th {
+      font-weight:bold;
     }
 
   </style>
@@ -387,7 +413,7 @@
     </div>
 
     <div id="Sniffer" class="tabcontent">
-      <h2>Monitor</h2>
+      <h2>Monitor & Enter Tuya Commands</h2>
       <br/>
       <input type='text' style="width:90%;" placeholder="Enter command for device and press return" id='txtCmd'/> 
       <br/>
@@ -439,7 +465,14 @@
     </div>
            
     <div id="OTA" class="tabcontent">
-      <embed type="text/html" src="/web?OTA.htm" width="500" height="200">
+      <br></br>
+      <form id="upload_form" enctype="multipart/form-data" method="post">
+        <input type="file" name="file1" id="file1" onchange="uploadFile()"><br>
+        <br></br>
+        <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+        <h3 id="status"></h3>
+        <p id="loaded_n_total"></p>
+      </form>
     </div>
     
     <script>
@@ -451,6 +484,7 @@
       let ws;
       let jsonData;
       let dataLoaded = false;
+      let cfgGroupNow = -1;
       const $ = document.querySelector.bind(document);
       const $$ = document.querySelectorAll.bind(document);
 
@@ -569,44 +603,85 @@
         if (response.ok) {
           const configData = await response.json();
           // format received json into html table
-          buildTable(configData);
+          buildTable(configData, cfgGroup);
         } else console.log(response.status); 
       }
       
-      
-      function buildTable(configData) {
+      function buildTable(configData, cfgGroup) {
         // dynamically build table of editable settings
-        const table = document.createElement("table"); 
-        // Create table header row from heading names
-        const colHeaders = ['Setting Name', 'Setting Value']; 
-        let tr = table.insertRow(-1); 
-        for (let i = 0; i < colHeaders.length; i++) {
-          let th = document.createElement("th");    
-          th.innerHTML = colHeaders[i];
-          tr.appendChild(th);
-        }
-
-        // add each setting as a row containg setting name and setting value
-        let newRow = 1;
-        Object.keys(configData).forEach( key => {
-          if (newRow) tr = table.insertRow(-1);
-          let tabCell = tr.insertCell(-1);
-          if (newRow) {
-            tabCell.innerHTML = configData[key]; // name of setting
-            newRow = 0;
-          } else {
-            // input field for value of setting
-            tabCell.innerHTML = '<input type="text" class="configItem" name="' + key + '" value="' + configData[key] +'">'; 
-            newRow = 1;
-          }
-        })
-
-        // add the newly created table at placeholder
         const divShowData = document.getElementById('configTable');
         divShowData.innerHTML = "";
-        divShowData.appendChild(table);
+        if (cfgGroupNow != cfgGroup) {
+          cfgGroupNow = cfgGroup;
+          const table = document.createElement("table"); 
+          // Create table header row from heading names
+          const colHeaders = ['Setting Name', 'Setting Value']; 
+          let tr = table.insertRow(-1); 
+          for (let i = 0; i < colHeaders.length; i++) {
+            let th = document.createElement("th");    
+            th.innerHTML = colHeaders[i];
+            tr.appendChild(th);
+          }
+
+          // add each setting as a row containg setting name and setting value
+          let newRow = 1;
+          Object.keys(configData).forEach( key => {
+            if (newRow) tr = table.insertRow(-1);
+            let tabCell = tr.insertCell(-1);
+            if (newRow) {
+              tabCell.innerHTML = configData[key]; // name of setting
+              newRow = 0;
+            } else {
+              // input field for value of setting
+              tabCell.innerHTML = '<input type="text" class="configItem" name="' + key + '" value="' + configData[key] +'">'; 
+              newRow = 1;
+            }
+          })
+          // add the newly created table at placeholder
+          divShowData.appendChild(table);
+        } else cfgGroupNow = -1;
       }
 
+       /*********** OTA functions ***********/
+       
+      async function uploadFile() {
+        // notify server to start ota task
+        const response = await fetch('/control?startOTA=1');
+        if (response.ok) {
+          // submit file for uploading
+          let file = $("#file1").files[0];
+          let formdata = new FormData();
+          formdata.append("file1", file);
+          let ajax = new XMLHttpRequest();
+          ajax.upload.addEventListener("progress", progressHandler, false);
+          ajax.addEventListener("load", completeHandler, false);
+          ajax.addEventListener("error", errorHandler, false);
+          ajax.addEventListener("abort", abortHandler, false);
+          ajax.open("POST", basehost + '/upload');
+          ajax.send(formdata);
+        } else console.log(response.status); 
+      }
+
+      function progressHandler(event) {
+        $("#loaded_n_total").innerHTML = "Uploaded " + event.loaded + " of " + event.total + " bytes";
+        let percent = (event.loaded / event.total) * 100;
+        $("#progressBar").value = Math.round(percent);
+        $("#status").innerHTML = Math.round(percent) + "% transferred";
+        if (event.loaded  == event.total) $("#status").innerHTML = 'Uploaded, wait for completion result';
+      }
+
+      function completeHandler(event) {
+        $("#status").innerHTML = event.target.responseText;
+      }
+
+      function errorHandler(event) {
+        $("#status").innerHTML = "Upload Failed";
+      }
+
+      function abortHandler(event) {
+        $("#status").innerHTML = "Upload Aborted";
+      }
+      
       /****************** app specific ********************/
 
       let isOn = true;
@@ -743,7 +818,7 @@ console.log("changeSetting " + key + ", " + newval);
           }
           // input fields of given class
           if (event.target.classList.contains('configItem')) { 
-            debounceSendControl(event.target.name + '=' + event.target.value);
+            fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
           }
         });
         
