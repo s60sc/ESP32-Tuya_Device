@@ -1,7 +1,7 @@
 <!DOCTYPE html>     
 <html>     
   <head>
-    <meta charset="UTF-8" http-equiv="Content-Security-Policy" content="default-src 'self' data: ws: 'unsafe-inline'" />  
+    <meta charset="UTF-8 />  
     <title>Floor Thermostat</title>
   </head>
   
@@ -657,7 +657,7 @@
           ajax.addEventListener("load", completeHandler, false);
           ajax.addEventListener("error", errorHandler, false);
           ajax.addEventListener("abort", abortHandler, false);
-          ajax.open("POST", basehost + '/upload');
+          ajax.open("POST", basehost + ':83/upload');
           ajax.send(formdata);
         } else console.log(response.status); 
       }
