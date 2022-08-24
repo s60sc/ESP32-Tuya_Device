@@ -7,7 +7,7 @@
   
   <style>
     body {
-      font-family: helvetica  !important;
+      font-family: Helvetica  !important;
     }
     
     /* Style the tab */
@@ -58,9 +58,10 @@
     input[type=number]::-webkit-inner-spin-button {
       opacity: 1
     }
-    
-    .cell1 {
-      grid-area: a;
+
+    .grid-cols1a {
+      grid-template-columns: 400px;
+      display: grid;
       color: tan;
       font-size: 50px;
       background-image: url( '/web?wood.svg' );
@@ -68,77 +69,47 @@
       align-items: center;
       height: 60px
     }
-    .cell2 {
-      grid-area: b;
-    }
-    .cell3 {
-      grid-area: d;
-    }
-    .cell4 {
-      grid-area: e;
-    }
-    .cell5 {
-      grid-area: f;
-    }
-    .cell6 {
-      grid-area: g;
-    }
-    .cell7 {
-      grid-area: h;
-    }
 
-    .grid-container1 {
-      grid-template-columns: 150px 100px 75px 75px;
-      grid-template-areas: 
-        'a a a a'
-        'b b b b'
-        'd . f f'
-        'd e f f'
-        'd . f f'
-        'd . f f'
-        '. . g h';
+    .grid-cols1 {
+      grid-template-columns: 400px;
     }
     
-    .grid-container2 {
+    .grid-cols2a {
+       grid-template-columns: 250px 150px;
+     }
+     
+    .grid-cols3a {
+       grid-template-columns: 100px 150px 150px;
+     }
+        
+    .grid-cols3b {
+      grid-template-columns: 150px 100px 150px;
+    }
+    
+    .grid-cols3c {
+      grid-template-columns: 250px 75px 75px;
+    }
+         
+    .grid-cols4 {
       grid-template-columns: 100px 100px 100px 100px;
     }
     
-    .grid-container3 {
-      display: grid;
-      grid-template-columns: 400px;
-    }
-
-    .grid-container1, .grid-container2, .grid-container3, .grid-container6 {
+    .grid-cols1, .grid-cols2a, .grid-cols3a, .grid-cols3b, .grid-cols3c, .grid-cols4  {
       display: grid;
       background-color: none;
-      text-align: center;
       font-size: 30px;
       border: 0px solid black;
+    }
+    
+    .grid-cols1, .grid-cols3b, .grid-cols3c, .grid-cols4, .setButs {
+      text-align: center;
       dominant-baseline: middle;
       text-anchor: middle;
     }
     
-    .grid-container4 {
-       display: grid;
-       grid-template-columns: 100px 150px 120px;
-     }
-     
-    .grid-container5 {
-       display: grid;
-       grid-template-columns: 250px 140px;
-     }
-    
-    .grid-container4, .grid-container5 > div {
-      background-color: none;
-      font-size: 30px;
+    .grid-cols2a, .grid-cols3a {
       text-align: left;
-      border: 0px solid black;
     }
-    
-   .grid-container6 {
-      grid-template-columns: 100px 100px 100px 100px 100px;
-    }
-    
     
     #arrowAnim {
       width: 50%;
@@ -193,20 +164,22 @@
       pointer-events: none;
     }
     
-    input, #log  {
+    input, #applog  {
         font:20px 'Courier New';
         font-weight:bold;
         color: navy;
-      }
-    #log {
+    }
+    
+   .configGroup td {
+      border: solid 2px #ddd;
+    }
+    
+    
+    #applog {
       height:90%;
       width:90%;
       border:2px solid #ccc;
       overflow:auto;
-    }
-    
-    .settings_group td {
-      border: solid 2px #ddd;
     }
     
     th, td {
@@ -226,44 +199,48 @@
   <body>
     <div class="tab">
       <button class="tablinks active">Thermo</button>
-      <button class="tablinks">Sniffer</button>
-      <button class="tablinks">Config</button>
-      <button class="tablinks">OTA</button>
+      <button class="tablinks">Show Log</button>
+      <button class="tablinks">Edit Config</button>
+      <button class="tablinks">OTA Upload</button>
     </div>
     <div id="Thermo" class="tabcontent" style="display:block">
-      <div class="grid-container1">
-        <div class="cell1">
-           Floor Thermostat
+      <div class="grid-cols1a">
+        <div>
+          Floor Thermostat
         </div>
-        <div class="cell2">&nbsp</div>
-        <div class="cell3">
-            <svg width="150" height="100">
-              <rect/>
-              <text id="currTemp" x="50%" y="70%" font-size="40" fill="black"></text>
-              <text x="50%" y="30%" font-size="30" fill="white">Current</text>
-            </svg>
+        <br/>
+      </div>
+      <div class="grid-cols3b">
+        <div>
+          <svg width="150" height="100">
+            <rect/>
+            <text id="currTemp" x="50%" y="70%" font-size="40" fill="black"></text>
+            <text x="50%" y="30%" font-size="30" fill="white">Current</text>
+          </svg>
         </div>
-        <div class="cell4">
-          <div id="arrowAnim">
-            <div class="arrowSliding">
-              <div class="arrow"></div>
-            </div>
+        <div id="arrowAnim">
+          <br/>
+          <div class="arrowSliding">
+            <div class="arrow"></div>
           </div>
         </div>
-        <div class="cell5">
+        <div>
           <svg width="150" height="100">
             <rect/>
             <text id="tgtTemp" x="50%" y="70%" font-size="40" fill="black"></text>
             <text x="50%" y="30%" font-size="30" fill="white">Target</text>
           </svg>
         </div>
-        <div class="cell6">
+      </div>
+      <div class="grid-cols3c">
+        <div>&nbsp;</div>
+        <div>
           <svg width="40" height="30">
             <rect style="fill:skyblue"/>
             <text x="50%" y="50%" font-size="25" fill="white" id="decTemp">-</text>
           </svg>
         </div>
-        <div class="cell7">
+        <div>
           <svg width="40" height="30">
             <rect style="fill:tomato"/>
             <text x="50%" y="50%" font-size="25" fill="white" id="incTemp">+</text>
@@ -271,7 +248,7 @@
         </div>
       </div>
       <br/><br/>
-      <div class="grid-container2">
+      <div class="grid-cols4">
         <div>
           <svg width="90" height="90">
             <rect/>
@@ -300,131 +277,143 @@
             <text x="50%" y="30%" font-size="20" fill="white">Lock</text>
           </svg>
         </div>
-        <div>&nbsp </div>
       </div>
-      <div class="grid-container3">
+      <br/><br/>
+      <div class="grid-cols1">
         <div>
           <svg width="390" height="50">
             <rect style="rx:3%"/>
             <text x="50%" y="50%" font-size="30" fill="black" id="doSchedule">Schedule</text>
           </svg>
-          <div class="panel" id="schedule">
-            <div class="grid-container4">
-              <div>Slot</div>
-              <div>Time</div>
-              <div>Temp</div>
-              <div>W1:</div>
-              <div><input type="time" id="slotTime1" class="update-action"></div>
-              <div><input type="number" id="slotTemp1" min="5" max="27" class="inNum update-action"></div>
-              <div>W2:</div>
-              <div><input type="time" id="slotTime2" class="update-action"></div>
-              <div><input type="number" id="slotTemp2" min="5" max="27" class="inNum update-action"></div>
-              <div>W3:</div>
-              <div><input type="time" id="slotTime3" class="update-action"></div>
-              <div><input type="number" id="slotTemp3" min="5" max="27" class="inNum update-action"></div>
-              <div>W4:</div>
-              <div><input type="time" id="slotTime4" class="update-action"></div>
-              <div><input type="number" id="slotTemp4" min="5" max="27" class="inNum update-action"></div>
-              <div>W5:</div>
-              <div><input type="time" id="slotTime5" class="update-action"></div>
-              <div><input type="number" id="slotTemp5" min="5" max="27" class="inNum update-action"></div>
-              <div>W6:</div>
-              <div><input type="time" id="slotTime6" class="update-action"></div>
-              <div><input type="number" id="slotTemp6" min="5" max="27" class="inNum update-action"></div>
-              <div>R1:</div>
-              <div><input type="time" id="slotTime7" class="update-action"></div>
-              <div><input type="number" id="slotTemp7" min="5" max="27" class="inNum update-action"></div>
-              <div>R2:</div>
-              <div><input type="time" id="slotTime8" class="update-action"></div>
-              <div><input type="number" id="slotTemp8" min="5" max="27" class="inNum update-action"></div>
-            </div>
-            <div class="grid-container3">
-              <svg width="300" height="50">
-                <rect style="rx:5%"/>
-                <text x="50%" y="50%" font-size="30" fill="white" id="apply">Apply</text>
-              </svg>
-            </div>
-          </div>
+        </div>
+      </div>
+      <div class="panel" id="schedule">
+        <div class="grid-cols3a">
+          <div>Slot</div>
+          <div>Time</div>
+          <div>Temp</div>
+          <div>W1:</div>
+          <div><input type="time" id="slotTime1" class="update-action"></div>
+          <div><input type="number" id="slotTemp1" min="5" max="27" class="inNum update-action"></div>
+          <div>W2:</div>
+          <div><input type="time" id="slotTime2" class="update-action"></div>
+          <div><input type="number" id="slotTemp2" min="5" max="27" class="inNum update-action"></div>
+          <div>W3:</div>
+          <div><input type="time" id="slotTime3" class="update-action"></div>
+          <div><input type="number" id="slotTemp3" min="5" max="27" class="inNum update-action"></div>
+          <div>W4:</div>
+          <div><input type="time" id="slotTime4" class="update-action"></div>
+          <div><input type="number" id="slotTemp4" min="5" max="27" class="inNum update-action"></div>
+          <div>W5:</div>
+          <div><input type="time" id="slotTime5" class="update-action"></div>
+          <div><input type="number" id="slotTemp5" min="5" max="27" class="inNum update-action"></div>
+          <div>W6:</div>
+          <div><input type="time" id="slotTime6" class="update-action"></div>
+          <div><input type="number" id="slotTemp6" min="5" max="27" class="inNum update-action"></div>
+          <div>R1:</div>
+          <div><input type="time" id="slotTime7" class="update-action"></div>
+          <div><input type="number" id="slotTemp7" min="5" max="27" class="inNum update-action"></div>
+          <div>R2:</div>
+          <div><input type="time" id="slotTime8" class="update-action"></div>
+          <div><input type="number" id="slotTemp8" min="5" max="27" class="inNum update-action"></div>
         </div>
         <br/>
+        <div class="grid-cols1">
+          <div>
+            <svg width="300" height="50">
+              <rect style="rx:5%"/>
+              <text x="50%" y="50%" font-size="30" fill="white" id="apply">Apply</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+     <br/><br/>
+      <div class="grid-cols1">
         <div>
           <svg width="390" height="50">
             <rect style="rx:3%"/>
             <text x="50%" y="50%" font-size="30" fill="black" id="doSettings">Settings</text>
           </svg>
-          <div class="panel" id='settings'>
-            <div class="grid-container5">
-              <div>Max Floor &#x2103;:</div>
-              <div><input type="number" id="floorMax" min="5" max="27" class='tempAttrs'></div>
-              <div>Max Room &#x2103;:</div>
-              <div><input type="number" id="roomMax" min="5" max="25" class='tempAttrs'></div>
-              <div>Calibration &#x2103;:</div>
-              <div><input type="number" id="tempCal" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
-              <div>Backlash &#x2103;:</div>
-              <div><input type="number" id="tempLash" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
-              <div>Day Setting:</div>
-              <div>
-                <svg width="80" height="32">
-                  <rect style="rx:10%"/>
-                  <text x="50%" y="50%" font-size="25" fill="white" id="daySetting"></text>
-                </svg>
-              </div>
-              <div>Back Light:</div>
-              <div>
-                <svg width="80" height="32">
-                  <rect style="rx:10%"/>
-                  <text x="50%" y="50%" font-size="25" fill="white" id="backLight"></text>
-                </svg>
-              </div>
-              <div>Temp Sensor:</div>
-              <div>
-                  <svg width="80" height="32">
-                    <rect style="rx:10%"/>
-                    <text x="50%" y="50%" font-size="25" fill="white" id="tempSensor"></text>
-                  </svg>
-              </div>
-              <div>Reset:</div>
-              <div>
-                <svg width="80" height="32">
-                  <rect style="rx:10%"/>
-                  <text x="50%" y="50%" font-size="25" fill="white" id="doReset">!</text>
-                </svg>
-              </div>
-              <!--
-              <div>Output Reverse:</div>
-              <div>
-                <svg width="80" height="32">
-                  <rect style="rx:10%"/>
-                  <text x="50%" y="50%" font-size="25" fill="white" id="opReverse">Off</text>
-                </svg>
-              </div>
-              <div>Sound:</div>
-              <div>
-                <svg width="80" height="32">
-                  <rect style="rx:10%"/>
-                  <text x="50%" y="50%" font-size="25" fill="white" id="soundOn">Off</text>
-                </svg>
-              </div>
-              -->
-            </div>
+        </div>
+      </div>
+      <br/>
+      <div class="panel" id='settings'>
+        <div class="grid-cols2a">
+          <div>Max Floor &#x2103;:</div>
+          <div><input type="number" id="floorMax" min="5" max="27" class='tempAttrs'></div>
+          <div>Max Room &#x2103;:</div>
+          <div><input type="number" id="roomMax" min="5" max="25" class='tempAttrs'></div>
+          <div>Calibration &#x2103;:</div>
+          <div><input type="number" id="tempCal" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
+          <div>Backlash &#x2103;:</div>
+          <div><input type="number" id="tempLash" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
+          <div>Day Setting:</div>
+          <div>
+            <svg width="80" height="32" class="setButs">
+              <rect style="rx:10%"/>
+              <text x="50%" y="50%" font-size="25" fill="white" id="daySetting"></text>
+            </svg>
           </div>
+          <div>Back Light:</div>
+          <div>
+            <svg width="80" height="32" class="setButs">
+              <rect style="rx:10%"/>
+              <text x="50%" y="50%" font-size="25" fill="white" id="backLight"></text>
+            </svg>
+          </div>
+          <div>Temp Sensor:</div>
+          <div>
+              <svg width="80" height="32" class="setButs">
+                <rect style="rx:10%"/>
+                <text x="50%" y="50%" font-size="25" fill="white" id="tempSensor"></text>
+              </svg>
+          </div>
+          <div>Reset:</div>
+          <div>
+            <svg width="80" height="32" class="setButs">
+              <rect style="rx:10%"/>
+              <text x="50%" y="50%" font-size="25" fill="white" id="doReset">!</text>
+            </svg>
+          </div>
+          <!--
+          <div>Output Reverse:</div>
+          <div>
+            <svg width="80" height="32">
+              <rect style="rx:10%"/>
+              <text x="50%" y="50%" font-size="25" fill="white" id="opReverse">Off</text>
+            </svg>
+          </div>
+          <div>Sound:</div>
+          <div>
+            <svg width="80" height="32">
+              <rect style="rx:10%"/>
+              <text x="50%" y="50%" font-size="25" fill="white" id="soundOn">Off</text>
+            </svg>
+          </div>
+          -->
         </div>
       </div>
     </div>
 
-    <div id="Sniffer" class="tabcontent">
+    <div id="ShowLog" class="tabcontent">
       <h2>Monitor & Enter Tuya Commands</h2>
+      <div class="grid-cols1">
+        <svg width="150" height="40">
+          <rect/>
+          <text id="clearWSlog" x="50%" y="50%" font-size="25" fill="black">Clear Log</text>
+        </svg>
+      </div>
       <br/>
       <input type='text' style="width:90%;" placeholder="Enter command for device and press return" id='txtCmd'/> 
       <br/>
-      <pre id='log'></pre>
+      <pre id='applog' style="height:50vh;"></pre>
     </div>
-
-    <div id="Config" class="tabcontent">
+    
+    <div id="EditConfig" class="tabcontent">
       <h2>Control</h2>
       <h3>Press Config button to view or modify settings (changed values are not validated)</h3>
       <h3>Press Save button to make changes permanent</h3>
-      <div class="grid-container6">
+      <div class="grid-cols5">
         <div>
           <svg width="90" height="90">
             <rect/>
@@ -459,38 +448,39 @@
           </svg>
         </div>
       </div>
-      <div class="settings_group">
+      <div class="configGroup">
         <p id='configTable'></p>
       </div>
     </div>
            
-    <div id="OTA" class="tabcontent">
+    <div id="OTAUpload" class="tabcontent">
       <br></br>
       <form id="upload_form" enctype="multipart/form-data" method="post">
         <input type="file" name="file1" id="file1" onchange="uploadFile()"><br>
         <br></br>
-        <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>
         <h3 id="status"></h3>
         <p id="loaded_n_total"></p>
       </form>
     </div>
     
     <script>
-    
+
       /*********** initialisation functions ***********/
       
-      let baseHost = window.location.origin;
-      let wsServer = "ws://" + document.location.host + ":80/ws";
+      const baseHost = window.location.origin;
+      const wsServer = "ws://" + document.location.host + ":80/ws";
       let ws;
-      let jsonData;
-      let dataLoaded = false;
+      let statusData; // stores all status data as key val pair
       let cfgGroupNow = -1;
       const $ = document.querySelector.bind(document);
       const $$ = document.querySelectorAll.bind(document);
 
       document.addEventListener("DOMContentLoaded", () => {
-        initWebSocket();
-        loadStatus();
+        try {
+          initWebSocket();
+          loadStatus();
+        } catch (error) {addLogLine("Error: " + error.message);}
         setListeners();
       });
       
@@ -498,7 +488,7 @@
       
       // define websocket handling
       function initWebSocket() {
-        add_log_line("Connect to: " + wsServer);
+        addLogLine("Connect to: " + wsServer);
         ws = new WebSocket(wsServer);
         ws.onopen = onOpen;
         ws.onclose = onClose;
@@ -507,19 +497,23 @@
       
       // connect to websocket server
       function onOpen(event) {
-        add_log_line("Connected");
+        addLogLine("Connected");
       }
       
       // process received message
       function onMessage(messageEvent) {
         if (messageEvent.data.startsWith("{")) {
-          jsonData = JSON.parse(messageEvent.data);
-          processStatus(); 
-        } else add_log_line(messageEvent.data);
+          let updateData = JSON.parse(messageEvent.data);
+console.log(updateData);
+          Object.keys(updateData).forEach(key => {
+            statusData[key] = updateData[key];
+            processStatus(key, false);
+          });
+        } else addLogLine(messageEvent.data);
       }
       
       function onClose(event) {
-        add_log_line("Disconnected");
+        addLogLine("Disconnected");
         initWebSocket();
       }
       
@@ -543,16 +537,17 @@
        /*********** data processing functions ***********/
       
       async function loadStatus() {
+        // request and load current status
         const response = await fetch(baseHost+'/status');
         if (response.ok) {
-          jsonData = await response.json();
-//          jsonData = {"AP_Pass":"","AP_gw":"","AP_ip":"","AP_sn":"","Auth_Pass":"","Auth_User":"","ST_Pass":"********","ST_SSID":"bisk1ts","ST_gw":"192.168.1.1","ST_ip":"192.168.1.162","ST_ns1":"192.168.1.1","ST_ns2":"","ST_sn":"255.255.255.0","allowAP":"1","backLight":"0","childLock":"0","currTemp":"21.8","daySetting":"0","doReset":"0","fault":"0","floorMax":"27","frost":"0","hostName":"ESP-TUYADEVICE_4B4E76A0","opReverse":"0","outputOn":"1","progMode":"0","restart":"","roomMax":"25","slotTemp1":"5","slotTemp2":"5","slotTemp3":"5","slotTemp4":"5","slotTemp5":"5","slotTemp6":"5","slotTemp7":"5","slotTemp8":"5","slotTime1":"00:00","slotTime2":"00:00","slotTime3":"00:00","slotTime4":"00:00","slotTime5":"00:00","slotTime6":"00:00","slotTime7":"00:00","slotTime8":"00:00","soundOn":"0","switchDisp":"1","tempCal":"-0.2","tempLash":"0.1","tempSensor":"0","tgtTemp":"14.0","wifiTimeoutSecs":"30","ST_Pass":"********","AP_Pass":"","Auth_Pass":"","fw_version":"1.0"}
-          Object.entries(jsonData).forEach(([key, value]) => {
+          statusData = await response.json();
+          Object.entries(statusData).forEach(([key, value]) => {
             // replace each existing value with new value, using key name to match html tag id
             if ($('text#'+key)) $('text#'+key).textContent = value;
             else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
           });
-          applyStatus();
+          Object.keys(statusData).forEach(key => processStatus(key, false));
+          await sleep(1000);
         } else console.log(response.status); 
       }
       
@@ -574,8 +569,8 @@
       /*********** utility functions ***********/
       
       // add received line to log element
-      function add_log_line(text) {
-        let log = document.getElementById('log');
+      function addLogLine(text) {
+        let log = document.getElementById('applog');
         let new_node = document.createTextNode(text + "\n");
         log.append(new_node);
       }
@@ -623,7 +618,7 @@
             tr.appendChild(th);
           }
 
-          // add each setting as a row containg setting name and setting value
+          // add each setting as a row containing setting name and setting value
           let newRow = 1;
           Object.keys(configData).forEach( key => {
             if (newRow) tr = table.insertRow(-1);
@@ -665,21 +660,24 @@
       function progressHandler(event) {
         $("#loaded_n_total").innerHTML = "Uploaded " + event.loaded + " of " + event.total + " bytes";
         let percent = (event.loaded / event.total) * 100;
-        $("#progressBar").value = Math.round(percent);
+        $("#progressOta").value = Math.round(percent);
         $("#status").innerHTML = Math.round(percent) + "% transferred";
         if (event.loaded  == event.total) $("#status").innerHTML = 'Uploaded, wait for completion result';
       }
 
       function completeHandler(event) {
         $("#status").innerHTML = event.target.responseText;
+        $("#progressOta").value = 0;
       }
 
       function errorHandler(event) {
         $("#status").innerHTML = "Upload Failed";
+        $("#progressOta").value = 0;
       }
 
       function abortHandler(event) {
         $("#status").innerHTML = "Upload Aborted";
+        $("#progressOta").value = 0;
       }
       
       /****************** app specific ********************/
@@ -699,24 +697,15 @@
         let line = txt.value;
         if (line != "") {
           ws.send(line);
-          add_log_line("CMD: " + line);
+          addLogLine("CMD: " + line);
           txt.value = "";
           txt.focus();
         }
         return false;
       }
       
-      async function applyStatus() {
-        // callback from common.js with received json
-        dataLoaded = false;
-        setTempRanges();
-        Object.keys(jsonData).forEach(key => processStatus(key));
-        debounceSendControl('null=1'); // prevent unwanted fetches from initial update
-        await sleep(1000);
-        dataLoaded = true;
-      }
-      
-      function processStatus(key) {
+      function processStatus(key, fromUser) {
+        // called from common.js for each updated key
         if (key == "config") getConfig("0");
         else if (key == "save") debounceSendControl(key + '=1');
         else if (key == "reset") debounceSendControl(key + '=1');
@@ -726,62 +715,64 @@
         else if (key == "decTemp") changeTgtTemp(-1);
         else if (key == "doSettings") accordian('settings');
         else if (key == "doSchedule") accordian('schedule');
-        else if (key == "switchDisp") changeSwitch();
+        else if (key == "switchDisp") changeSwitch(fromUser);
         else if (key == "currTemp") setCurrTemp();
-        else if (key == "outputOn") changeOutput(jsonData[key]);
+        else if (key == "outputOn") changeOutput(statusData[key]);
         else if (key == "tgtTemp") changeTgtTemp(0);
-        else if (key == "frost") changeSetting(key, onoff);
-        else if (key == "progMode") changeSetting(key, prog);
-        else if (key == "daySetting") changeSetting(key, days);
-        else if (key == "backLight") changeSetting(key, light);
-        else if (key == "tempSensor") changeSensor();
-        else if (key == "childLock") changeSetting(key, onoff);
-        else if (key == "doReset") doMCUreset();
+        else if (key == "frost") changeSetting(key, onoff, fromUser);
+        else if (key == "progMode") changeSetting(key, prog, fromUser);
+        else if (key == "daySetting") changeSetting(key, days, fromUser);
+        else if (key == "backLight") changeSetting(key, light, fromUser);
+        else if (key == "tempSensor") changeSensor(fromUser);
+        else if (key == "floorMax") setTempRanges();
+        else if (key == "roomMax") setTempRanges();
+        else if (key == "childLock") changeSetting(key, onoff, fromUser);
+        else if (key == "doReset") doMCUreset(fromUser);
+        else if (key == "clearWSlog") _('#applog').innerHTML = "";
         else if (key == "apply") sendUpdates('none');
         //else if (key == "soundOn") changeSetting(key, onoff);
         //else if (key == "opReverse") changeSetting(key, onoff);
       }
       
-      function changeSwitch() {
-        changeSetting("switchDisp", onoff);
-        isOn = (jsonData["switchDisp"] == 1) ? true : false;
+      function changeSwitch(fromUser) {
+        changeSetting("switchDisp", onoff, fromUser);
+        isOn = (statusData["switchDisp"] == 1) ? true : false;
         changeTgtTemp(0);
       }
       
-      function changeSensor() {
-        changeSetting("tempSensor", sensor);
+      function changeSensor(fromUser) {
+        changeSetting("tempSensor", sensor, fromUser);
         setTempRanges();
       }
       
       function setTempRanges() {
         // dynamically set temperature ranges
         minTemp = 5; // fixed
-        maxTemp = (jsonData['tempSensor'] == 1) ? jsonData['floorMax'] : jsonData['roomMax'];
+        maxTemp = (statusData['tempSensor'] == 1) ? statusData['floorMax'] : statusData['roomMax'];
         $$('.inNum').forEach(el => {
           el.min = minTemp;
           el.max = maxTemp;
           if (+el.value > maxTemp) el.value = maxTemp;
           if (+el.value < minTemp) el.value = minTemp;
         });
-        if (jsonData["tgtTemp"] > maxTemp) {
-          jsonData["tgtTemp"] = maxTemp;
+        if (statusData["tgtTemp"] > maxTemp) {
+          statusData["tgtTemp"] = maxTemp;
           $('text#tgtTemp').textContent = maxTemp + "\u2103";
         }
       }
       
       function setCurrTemp() {
-        if (jsonData['fault'] == 1) $('text#currTemp').textContent = "ERR"; 
-        else $('text#currTemp').textContent = jsonData['currTemp']+"\u2103";
+        if (statusData['fault'] == 1) $('text#currTemp').textContent = "ERR"; 
+        else $('text#currTemp').textContent = statusData['currTemp']+"\u2103";
       }
 
       function changeTgtTemp(incVal) {
-console.log("changeTgtTemp " + incVal + ", " + isOn);
         if (isOn) {
-          let newTemp = +jsonData["tgtTemp"] + incVal;
+          let newTemp = +statusData["tgtTemp"] + incVal;
           if (newTemp <= maxTemp && newTemp >= minTemp) {
-            jsonData["tgtTemp"] = newTemp;
+            statusData["tgtTemp"] = newTemp;
             $('text#tgtTemp').textContent = newTemp + "\u2103";
-            if (incVal != 0) debounceSendControl('tgtTemp=' + newTemp);
+            if (+incVal != 0) debounceSendControl('tgtTemp=' + newTemp);
           } 
         } else {
           $('text#tgtTemp').textContent = "OFF";
@@ -790,22 +781,21 @@ console.log("changeTgtTemp " + incVal + ", " + isOn);
       }
       
       function changeOutput(isHeating) {
-        document.getElementById("arrowAnim").style.display = (isHeating == 1) ? "block" : "none";
+        $("#arrowAnim").style.display = (isHeating == 1) ? "block" : "none";
       }
       
-      async function changeSetting(key, settings) {
-        let newval = +jsonData[key];
-        if (dataLoaded) newval++;
+      async function changeSetting(key, settings, fromUser) {
+        let newval = +statusData[key];
+        if (fromUser) newval++;
         if (newval == settings.length) newval = 0;
-console.log("changeSetting " + key + ", " + newval);
         $('text#'+key).textContent = settings[newval];
-        jsonData[key] = newval;
-        debounceSendControl(key + '=' + newval);
+        statusData[key] = newval;
+        if (fromUser) debounceSendControl(key + '=' + newval);
       }
       
-      function doMCUreset() {
+      function doMCUreset(fromUser) {
         $('text#doReset').textContent = "!";
-        if (dataLoaded && window.confirm("Are you sure?")) debounceSendControl('doReset=1');
+        if (fromUser && window.confirm("Are you sure?")) debounceSendControl('doReset=1');
       }
       
       function setListeners() {
@@ -813,7 +803,7 @@ console.log("changeSetting " + key + ", " + newval);
         document.addEventListener("change", function (event) {
           // number fields of given class
           if (event.target.classList.contains('tempAttrs')) { 
-            jsonData[event.target.id] = event.target.value;
+            statusData[event.target.id] = event.target.value;
             debounceSendControl(event.target.id + '=' + event.target.value);
           }
           // input fields of given class
@@ -825,9 +815,9 @@ console.log("changeSetting " + key + ", " + newval);
         // add event listener for click events
         document.addEventListener("click", function (event) {
           // svg rect elements, use id of its following text node
-          if (event.target.nodeName == 'rect') processStatus(event.target.nextElementSibling.id);
-          // buttons, use button text as tab id
-          if (event.target.nodeName == 'BUTTON') openTab(event.target, event.target.innerHTML);
+          if (event.target.nodeName == 'rect') processStatus(event.target.nextElementSibling.id, true);
+          // tab buttons, use button text as tab id
+          if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
         });
         
         // event listener for command entered on Sniffer tab
