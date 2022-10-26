@@ -59,17 +59,6 @@
       opacity: 1
     }
 
-    .grid-cols1a {
-      grid-template-columns: 400px;
-      display: grid;
-      color: tan;
-      font-size: 50px;
-      background-image: url( '/web?wood.svg' );
-      justify-items: center;
-      align-items: center;
-      height: 60px
-    }
-
     .grid-cols1 {
       grid-template-columns: 400px;
     }
@@ -93,15 +82,19 @@
     .grid-cols4 {
       grid-template-columns: 100px 100px 100px 100px;
     }
+         
+    .grid-cols6 {
+      grid-template-columns: 120px 120px 120px 120px 120px 120px;
+    }
     
-    .grid-cols1, .grid-cols2a, .grid-cols3a, .grid-cols3b, .grid-cols3c, .grid-cols4  {
+    .grid-cols1, .grid-cols2a, .grid-cols3a, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols6 {
       display: grid;
       background-color: none;
       font-size: 30px;
       border: 0px solid black;
     }
     
-    .grid-cols1, .grid-cols3b, .grid-cols3c, .grid-cols4, .setButs {
+    .grid-cols1, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols6, .setButs {
       text-align: center;
       dominant-baseline: middle;
       text-anchor: middle;
@@ -130,10 +123,10 @@
     }
 
     @-webkit-keyframes slide {
-       0% { opacity:1; transform: translateX(0vw); }
-       33% { opacity:0.7; transform: translateX(2vw); }
-       67% { opacity:0.3; transform: translateX(4vw); }
-       100% { opacity:0.1; transform: translateX(6vw); }
+       0% { opacity:1; transform: translateX(-1vw); }
+       33% { opacity:0.7; transform: translateX(1vw); }
+       67% { opacity:0.3; transform: translateX(3vw); }
+       100% { opacity:0.1; transform: translateX(5vw); }
     }
 
     .panel {
@@ -204,12 +197,13 @@
       <button class="tablinks">OTA Upload</button>
     </div>
     <div id="Thermo" class="tabcontent" style="display:block">
-      <div class="grid-cols1a">
-        <div>
-          Floor Thermostat
-        </div>
-        <br/>
+      <div>
+        <svg width="400" height="60">
+          <rect style="fill:saddleBrown; rx:0%"/>
+          <text x="10%" y="70%" font-size="40" fill="tan">Floor Thermostat</text>
+        </svg>
       </div>
+      <br/>
       <div class="grid-cols3b">
         <div>
           <svg width="150" height="100">
@@ -218,11 +212,14 @@
             <text x="50%" y="30%" font-size="30" fill="white">Current</text>
           </svg>
         </div>
-        <div id="arrowAnim">
+        <div id="arrowAnim" style="display:none">
           <br/>
           <div class="arrowSliding">
             <div class="arrow"></div>
           </div>
+        </div>
+        <div id="blankCell">
+          <div>&nbsp;</div>
         </div>
         <div>
           <svg width="150" height="100">
@@ -399,7 +396,7 @@
       <h2>Monitor & Enter Tuya Commands</h2>
       <div class="grid-cols1">
         <svg width="150" height="40">
-          <rect/>
+          <rect style="rx:5%"/>
           <text id="clearWSlog" x="50%" y="50%" font-size="25" fill="black">Clear Log</text>
         </svg>
       </div>
@@ -413,11 +410,17 @@
       <h2>Control</h2>
       <h3>Press Config button to view or modify settings (changed values are not validated)</h3>
       <h3>Press Save button to make changes permanent</h3>
-      <div class="grid-cols5">
+      <div class="grid-cols6">
         <div>
           <svg width="90" height="90">
             <rect/>
             <text id="config" x="50%" y="50%" font-size="25" fill="black">Config</text>
+          </svg>
+        </div>
+        <div>
+          <svg width="90" height="90">
+            <rect/>
+            <text id="stats" x="50%" y="50%" font-size="25" fill="black">Stats</text>
           </svg>
         </div>
         <div>
@@ -504,7 +507,6 @@
       function onMessage(messageEvent) {
         if (messageEvent.data.startsWith("{")) {
           let updateData = JSON.parse(messageEvent.data);
-console.log(updateData);
           Object.keys(updateData).forEach(key => {
             statusData[key] = updateData[key];
             processStatus(key, false);
@@ -588,6 +590,52 @@ console.log(updateData);
       
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+      }
+      
+      /*********** command processing ***********/
+      
+      function setListeners() {
+        // add event listener for change events
+        setAppListeners();
+        // add event listener for click events
+        document.addEventListener("click", function (event) {
+          // svg rect elements, use id of its following text node
+          if (event.target.nodeName == 'rect') processStatus(event.target.nextElementSibling.id, true);
+          // tab buttons, use button text as tab id
+          if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
+        });
+        
+        // event listener for command entered on Log tab
+        document.addEventListener("keydown", function (event) {
+          if (event.target.id == 'txtCmd') {
+            let keyPress = event.keyCode || event.which;
+            if (keyPress == 13) sendCmd();
+          }
+        });
+      }
+      
+      function sendCmd() {
+        // send user command to websocket server
+        let txt = $('#txtCmd');
+        let line = txt.value;
+        if (line != "" && ws !== undefined) {
+          ws.send(line);
+          addLogLine("CMD: " + line);
+          txt.value = "";
+          txt.focus();
+        } else addLogLine("No command or no connection");
+      }
+      
+      function processStatus(key, fromUser) {
+        // called for each updated key
+        if (key == "config") getConfig("0");
+        else if (key == "stats") getConfig("01"); 
+        else if (key == "save") debounceSendControl(key + '=1');
+        else if (key == "reset") debounceSendControl(key + '=1');
+        else if (key == "deldata") debounceSendControl(key + '=1');
+        else if (key == "clear") debounceSendControl(key + '=1');
+        else if (key == "clearWSlog") $('#applog').innerHTML = "";
+        else processAppStatus(key, fromUser);
       }
       
       /*********** config functions ***********/
@@ -691,27 +739,9 @@ console.log(updateData);
       let light = ['Off', 'Low', 'Mid', 'High'];
       let sensor = ["Room", "Floor", "Both"];
       
-      function sendCmd() {
-        // send user command to websocket server
-        let txt = $('#txtCmd');
-        let line = txt.value;
-        if (line != "") {
-          ws.send(line);
-          addLogLine("CMD: " + line);
-          txt.value = "";
-          txt.focus();
-        }
-        return false;
-      }
-      
-      function processStatus(key, fromUser) {
-        // called from common.js for each updated key
-        if (key == "config") getConfig("0");
-        else if (key == "save") debounceSendControl(key + '=1');
-        else if (key == "reset") debounceSendControl(key + '=1');
-        else if (key == "deldata") debounceSendControl(key + '=1');
-        else if (key == "clear") debounceSendControl(key + '=1');
-        else if (key == "incTemp") changeTgtTemp(1);
+      function processAppStatus(key, fromUser) {
+        // called for each updated key
+        if (key == "incTemp") changeTgtTemp(1);
         else if (key == "decTemp") changeTgtTemp(-1);
         else if (key == "doSettings") accordian('settings');
         else if (key == "doSchedule") accordian('schedule');
@@ -727,9 +757,8 @@ console.log(updateData);
         else if (key == "floorMax") setTempRanges();
         else if (key == "roomMax") setTempRanges();
         else if (key == "childLock") changeSetting(key, onoff, fromUser);
-        else if (key == "doReset") doMCUreset(fromUser);
-        else if (key == "clearWSlog") _('#applog').innerHTML = "";
         else if (key == "apply") sendUpdates('none');
+        else if (key == "doReset") doMCUreset(fromUser);
         //else if (key == "soundOn") changeSetting(key, onoff);
         //else if (key == "opReverse") changeSetting(key, onoff);
       }
@@ -782,6 +811,7 @@ console.log(updateData);
       
       function changeOutput(isHeating) {
         $("#arrowAnim").style.display = (isHeating == 1) ? "block" : "none";
+        $("#blankCell").style.display = (isHeating == 1) ? "none" : "block";
       }
       
       async function changeSetting(key, settings, fromUser) {
@@ -797,8 +827,8 @@ console.log(updateData);
         $('text#doReset').textContent = "!";
         if (fromUser && window.confirm("Are you sure?")) debounceSendControl('doReset=1');
       }
-      
-      function setListeners() {
+
+      function setAppListeners() {
         // add event listener for change events
         document.addEventListener("change", function (event) {
           // number fields of given class
@@ -809,22 +839,6 @@ console.log(updateData);
           // input fields of given class
           if (event.target.classList.contains('configItem')) { 
             fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
-          }
-        });
-        
-        // add event listener for click events
-        document.addEventListener("click", function (event) {
-          // svg rect elements, use id of its following text node
-          if (event.target.nodeName == 'rect') processStatus(event.target.nextElementSibling.id, true);
-          // tab buttons, use button text as tab id
-          if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
-        });
-        
-        // event listener for command entered on Sniffer tab
-        document.addEventListener("keydown", function (event) {
-          if (event.target.id == 'txtCmd') {
-            let keyPress = event.keyCode || event.which;
-            if (keyPress == 13) sendCmd();
           }
         });
       }
