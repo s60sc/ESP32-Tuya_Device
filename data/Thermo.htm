@@ -474,7 +474,7 @@
       const baseHost = window.location.origin;
       const wsServer = "ws://" + document.location.host + ":80/ws";
       let ws;
-      let statusData; // stores all status data as key val pair
+      let statusData = {}; // stores all status data as key val pair
       let cfgGroupNow = -1;
       const $ = document.querySelector.bind(document);
       const $$ = document.querySelectorAll.bind(document);
@@ -482,7 +482,7 @@
       document.addEventListener("DOMContentLoaded", () => {
         try {
           initWebSocket();
-          loadStatus();
+          ws.onopen = () => sendReq('S'); // load status 
         } catch (error) {addLogLine("Error: " + error.message);}
         setListeners();
       });
@@ -496,6 +496,7 @@
         ws.onopen = onOpen;
         ws.onclose = onClose;
         ws.onmessage = onMessage; 
+        ws.onerror = onError;
       }
       
       // connect to websocket server
@@ -503,19 +504,35 @@
         addLogLine("Connected");
       }
       
-      // process received message
+      // process received WS message
       function onMessage(messageEvent) {
         if (messageEvent.data.startsWith("{")) {
-          let updateData = JSON.parse(messageEvent.data);
-          Object.keys(updateData).forEach(key => {
-            statusData[key] = updateData[key];
-            processStatus(key, false);
-          });
+          // json data
+          updateData = JSON.parse(messageEvent.data);
+          let filter = updateData.cfgGroup;
+          delete updateData.cfgGroup;
+          if (filter == "-1") {
+            // status update
+            Object.entries(updateData).forEach(([key, value]) => {
+              statusData[key] = value;
+              // replace each existing value with new value, using key name to match html tag id
+              if ($('text#'+key)) $('text#'+key).textContent = value;
+              else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
+              processStatus(key, false);
+            });
+          } else {
+            // format received config json into html table
+            buildTable(updateData, filter);
+          }
         } else addLogLine(messageEvent.data);
       }
       
+      function onError(event) {
+        addLogLine("WS Error: " + event.code);
+      }
+      
       function onClose(event) {
-        addLogLine("Disconnected");
+        addLogLine("Disconnected: " + event.code + ' - ' + event.reason);
         initWebSocket();
       }
       
@@ -536,38 +553,6 @@
         else panel.style.display = "block";
       }
       
-       /*********** data processing functions ***********/
-      
-      async function loadStatus() {
-        // request and load current status
-        const response = await fetch(baseHost+'/status');
-        if (response.ok) {
-          statusData = await response.json();
-          Object.entries(statusData).forEach(([key, value]) => {
-            // replace each existing value with new value, using key name to match html tag id
-            if ($('text#'+key)) $('text#'+key).textContent = value;
-            else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
-          });
-          Object.keys(statusData).forEach(key => processStatus(key, false));
-          await sleep(1000);
-        } else console.log(response.status); 
-      }
-      
-      function sendUpdates(doAction) {    
-        // get each required update element and obtain id/name and value into array to send as json
-        let jarray = {};
-        jarray["action"] = doAction;
-        $$('.update-action').forEach(el => {
-          if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
-        });
-        // send as json to server
-        fetch(baseHost + '/update', {
-          method: 'POST', 
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(jarray),
-        });
-      }
-      
       /*********** utility functions ***********/
       
       // add received line to log element
@@ -586,7 +571,7 @@
         };
       }
       
-      const debounceSendControl = debounce((query) => fetch(baseHost + encodeURI('/control?' + query)));
+      const debounceSendControl = debounce((key, val) => sendReq('U{"' + key + '":"' + val + '"}'));
       
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -619,36 +604,40 @@
         let txt = $('#txtCmd');
         let line = txt.value;
         if (line != "" && ws !== undefined) {
-          ws.send(line);
-          addLogLine("CMD: " + line);
+          sendReq(line);
           txt.value = "";
           txt.focus();
         } else addLogLine("No command or no connection");
       }
       
+      function sendReq(reqStr) {
+         ws.send(reqStr);
+         addLogLine("CMD: " + reqStr);
+      }
+      
+      function sendUpdates(doAction) {    
+        // get each required update element and obtain id/name and value into array to send as json 
+        let jarray = {};
+        jarray["action"] = doAction;
+        $$('.update-action').forEach(el => {
+          if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
+        });
+        sendReq('U' + JSON.stringify(jarray));
+      }
+
       function processStatus(key, fromUser) {
         // called for each updated key
-        if (key == "config") getConfig("0");
-        else if (key == "stats") getConfig("01"); 
-        else if (key == "save") debounceSendControl(key + '=1');
-        else if (key == "reset") debounceSendControl(key + '=1');
-        else if (key == "deldata") debounceSendControl(key + '=1');
-        else if (key == "clear") debounceSendControl(key + '=1');
+        if (key == "config") sendReq("S1234567890");
+        else if (key == "stats") sendReq("S123456789012");
+        else if (key == "save") debounceSendControl(key, '1');
+        else if (key == "reset") debounceSendControl(key, '1');
+        else if (key == "deldata") debounceSendControl(key, '1');
+        else if (key == "clear") debounceSendControl(key, '1');
         else if (key == "clearWSlog") $('#applog').innerHTML = "";
         else processAppStatus(key, fromUser);
       }
       
       /*********** config functions ***********/
-      
-      async function getConfig(cfgGroup) {
-        // request config json for selected group
-        const response = await fetch('/status?123456789' + cfgGroup);
-        if (response.ok) {
-          const configData = await response.json();
-          // format received json into html table
-          buildTable(configData, cfgGroup);
-        } else console.log(response.status); 
-      }
       
       function buildTable(configData, cfgGroup) {
         // dynamically build table of editable settings
@@ -801,7 +790,7 @@
           if (newTemp <= maxTemp && newTemp >= minTemp) {
             statusData["tgtTemp"] = newTemp;
             $('text#tgtTemp').textContent = newTemp + "\u2103";
-            if (+incVal != 0) debounceSendControl('tgtTemp=' + newTemp);
+            if (+incVal != 0) debounceSendControl('tgtTemp', newTemp);
           } 
         } else {
           $('text#tgtTemp').textContent = "OFF";
@@ -820,12 +809,12 @@
         if (newval == settings.length) newval = 0;
         $('text#'+key).textContent = settings[newval];
         statusData[key] = newval;
-        if (fromUser) debounceSendControl(key + '=' + newval);
+        if (fromUser) debounceSendControl(key, newval);
       }
       
       function doMCUreset(fromUser) {
         $('text#doReset').textContent = "!";
-        if (fromUser && window.confirm("Are you sure?")) debounceSendControl('doReset=1');
+        if (fromUser && window.confirm("Are you sure?")) debounceSendControl('doReset', '1');
       }
 
       function setAppListeners() {
@@ -834,12 +823,10 @@
           // number fields of given class
           if (event.target.classList.contains('tempAttrs')) { 
             statusData[event.target.id] = event.target.value;
-            debounceSendControl(event.target.id + '=' + event.target.value);
+            debounceSendControl('"' + event.target.id + '":"' + event.target.value + '"');
           }
           // input fields of given class
-          if (event.target.classList.contains('configItem')) { 
-            fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
-          }
+          if (event.target.classList.contains('configItem')) sendReq('U{"' + event.target.name + '":"' + event.target.value + '"}');
         });
       }
       

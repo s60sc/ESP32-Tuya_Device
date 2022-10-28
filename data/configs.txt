@@ -1,54 +1,55 @@
-restart~~99~na
-ST_SSID~~0~Wifi SSID name
-ST_Pass~~0~ Wifi SSID password
-ST_ip~~0~Static IP address
-ST_gw~~0~Router IP address
-ST_sn~255.255.255.0~0~Router subnet
-ST_ns1~~0~DNS server
-ST_ns2~~0~Alt DNS server
+AP_Pass~~0~AP password
+AP_gw~~0~AP gateway
 AP_ip~~0~AP IP Address if not 192.168.4.1
 AP_sn~~0~AP subnet
-AP_gw~~0~AP gateway
-allowAP~1~0~Allow AP Fallback if no router (0/1)
-AP_Pass~~0~AP password
 Auth_Name~~0~Optional user name for web page login
 Auth_Pass~~0~Optional password for web page login
-hostName~~0~Device host name
-wifiTimeoutSecs~30~0~WiFi connect timeout (secs)
-currTemp~19~98~na
-outputOn~0~98~na
-fault~0~98~na
-switchDisp~1~98~na
-tgtTemp~19~98~na
-progMode~1~98~na
+ST_Pass~********~0~ Wifi SSID password
+ST_SSID~bisk1ts~0~Wifi SSID name
+ST_gw~192.168.1.1~0~Router IP address
+ST_ip~192.168.1.162~0~Static IP address
+ST_ns1~192.168.1.1~0~DNS server
+ST_ns2~~0~Alt DNS server
+ST_sn~255.255.255.0~0~Router subnet
+allowAP~0~0~Allow AP Fallback if no router (0/1)
+backLight~2~98~na
 childLock~0~98~na
-soundOn~0~98~na
-tempCal~0~98~na
-roomMax~25~98~na
-tempSensor~1~98~na
-frost~0~98~na
+currTemp~21.2~98~na
+daySetting~0~98~na
 doReset~0~98~na
-backLight~1~98~na
-daySetting~2~98~na
+fault~0~98~na
+floorMax~21~98~na
+frost~0~98~na
+hostName~ESP-TUYADEVICE_4B4E76A0~0~Device host name
 opReverse~0~98~na
-tempLash~1~98~na
-floorMax~27~98~na
-slotTime1~00:00~98~na
-slotTemp1~14~98~na
-slotTime2~08:00~98~na
-slotTemp2~20~98~na
-slotTime3~23:00~98~na
-slotTemp3~17~98~na
-slotTime4~23:15~98~na
-slotTemp4~17~98~na
-slotTime5~23:30~98~na
-slotTemp5~14~98~na
-slotTime6~23:45~98~na
-slotTemp6~14~98~na
-slotTime7~00:00~98~na
-slotTemp7~5~98~na
-slotTime8~00:00~98~na
-slotTemp8~5~98~na
+outputOn~0~98~na
+progMode~1~98~na
+restart~~99~na
+roomMax~21~98~na
+slotTemp1~17~98~na
+slotTemp2~19~98~na
+slotTemp3~19~98~na
+slotTemp4~19~98~na
+slotTemp5~19~98~na
+slotTemp6~15~98~na
+slotTemp7~19~98~na
+slotTemp8~17~98~na
+slotTime1~08:00~98~na
+slotTime2~10:00~98~na
+slotTime3~11:30~98~na
+slotTime4~12:30~98~na
+slotTime5~17:00~98~na
+slotTime6~23:30~98~na
+slotTime7~23:00~98~na
+slotTime8~23:15~98~na
+soundOn~1~98~na
+switchDisp~1~98~na
+tempCal~0.0~98~na
+tempLash~1.0~98~na
+tempSensor~1~98~na
+tgtTemp~19.0~98~na
+wifiTimeoutSecs~30~0~WiFi connect timeout (secs)
 upTime~0~2~Elapsed time since restart
-timeOn~0~2~Total heating time
+totalOn~0~2~Total heating time
+avgOn~0~2~Average time per day
 pcntOn~0~2~% time heating on

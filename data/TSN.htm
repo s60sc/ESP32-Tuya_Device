@@ -1,0 +1,549 @@
+<!DOCTYPE html>     
+<html>     
+  <head>
+    <meta charset="UTF-8"/>  
+    <title>Tuya Sniffer</title>
+  </head>
+  
+  <style>
+    body {
+      font-family: Helvetica  !important;
+    }
+    
+    /* Style the tab */
+    .tab {
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background-color: #f1f1f1;
+    }
+
+    /* Style the buttons inside the tab */
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+      font-size: 17px;
+    }
+
+    /* Change background color of buttons on hover */
+    .tab button:hover {
+      background-color: #ddd;
+    }
+
+    /* Create an active/current tablink class */
+    .tab button.active {
+      background-color: #ccc;
+    }
+
+    /* Style the tab content */
+    .tabcontent {
+      display: none;
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-top: none;
+    }
+    
+    input[type="number"], input[type="time"] {
+      font-size:30px;
+      border:0px;
+    }
+    input[type='number']{
+      width: 110px;
+      text-align: center;
+    } 
+    input[type=number]::-webkit-inner-spin-button {
+      opacity: 1
+    }
+
+    .grid-cols1a {
+      grid-template-columns: 400px;
+      display: grid;
+      color: tan;
+      font-size: 45px;
+      justify-items: center;
+      align-items: center;
+      height: 60px
+    }
+
+    .grid-cols1 {
+      grid-template-columns: 400px;
+    }
+    
+    .grid-cols2a {
+       grid-template-columns: 250px 150px;
+     }
+     
+    .grid-cols3a {
+       grid-template-columns: 100px 150px 150px;
+     }
+        
+    .grid-cols3b {
+      grid-template-columns: 150px 100px 150px;
+    }
+    
+    .grid-cols3c {
+      grid-template-columns: 250px 75px 75px;
+    }
+         
+    .grid-cols4 {
+      grid-template-columns: 100px 100px 100px 100px;
+    }
+         
+    .grid-cols5 {
+      grid-template-columns: 120px 120px 120px 120px 120px;
+    }
+    
+    .grid-cols1, .grid-cols2a, .grid-cols3a, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols5 {
+      display: grid;
+      background-color: none;
+      font-size: 30px;
+      border: 0px solid black;
+    }
+    
+    .grid-cols1, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols5, .setButs {
+      text-align: center;
+      dominant-baseline: middle;
+      text-anchor: middle;
+    }
+    
+    .grid-cols2a, .grid-cols3a {
+      text-align: left;
+    }
+    
+    #arrowAnim {
+      width: 50%;
+      height: 50%;
+    }
+
+    .arrow {
+      width: 15px;
+      height: 15px;
+      border: 5px solid;
+      border-color: red transparent transparent red;
+      transform: rotate(135deg);
+    }
+
+    .arrowSliding {
+      position: absolute;
+      -webkit-animation: slide 1s linear infinite; 
+    }
+
+    @-webkit-keyframes slide {
+       0% { opacity:1; transform: translateX(-1vw); }
+       33% { opacity:0.7; transform: translateX(1vw); }
+       67% { opacity:0.3; transform: translateX(3vw); }
+       100% { opacity:0.1; transform: translateX(5vw); }
+    }
+
+    .panel {
+      padding: 0 18px;
+      display: none;
+      background-color: white;
+      overflow: hidden;
+    }
+    
+    rect {
+       fill: silver;
+       width: 100%;
+       height: 100%; 
+       x: 0;
+       y: 0;
+       rx: 15%;
+     }
+    
+    rect:hover {
+      fill: DarkGrey;
+    }
+    
+    rect:active {
+      fill: DarkSeaGreen;
+    }
+  
+    text {
+      pointer-events: none;
+    }
+    
+    input, #applog  {
+        font:20px 'Courier New';
+        font-weight:bold;
+        color: navy;
+    }
+    
+   .configGroup td {
+      border: solid 2px #ddd;
+    }
+    
+    
+    #applog {
+      height:90%;
+      width:90%;
+      border:2px solid #ccc;
+      overflow:auto;
+    }
+    
+    th, td {
+      border-collapse: collapse;
+      padding: 2px 3px;
+      text-align: left;
+    }
+    table {
+      border: 0px
+    }
+    th {
+      font-weight:bold;
+    }
+
+  </style>
+  
+  <body>
+    <div class="tab">
+      <button class="tablinks active">Show Log</button>
+      <button class="tablinks">Edit Config</button>
+      <button class="tablinks">OTA Upload</button>
+    </div>
+    <div id="ShowLog" class="tabcontent" style="display:block">
+      <h2>Monitor & Enter Tuya Commands</h2>
+      <div class="grid-cols1">
+        <svg width="150" height="40">
+          <rect style="rx:5%"/>
+          <text id="clearWSlog" x="50%" y="50%" font-size="25" fill="black">Clear Log</text>
+        </svg>
+      </div>
+      <br/>
+      <input type='text' style="width:90%;" placeholder="Enter command for device and press return" id='txtCmd'/> 
+      <br/>
+      <pre id='applog' style="height:50vh;"></pre>
+    </div>
+    
+    <div id="EditConfig" class="tabcontent">
+      <h2>Control</h2>
+      <h3>Press Config button to view or modify settings (changed values are not validated)</h3>
+      <h3>Press Save button to make changes permanent</h3>
+      <div class="grid-cols5">
+        <div>
+          <svg width="90" height="90">
+            <rect/>
+            <text id="config" x="50%" y="50%" font-size="25" fill="black">Config</text>
+          </svg>
+        </div>
+        <div>
+          <svg width="90" height="90">
+            <rect/>
+            <text id="save" x="50%" y="50%" font-size="25" fill="black">Save</text>
+          </svg>
+        </div>
+        <div>
+          <svg width="90" height="90">
+            <rect/>
+            <text id="reset" x="50%" y="30%"font-size="25" fill="black">Reboot
+            <tspan x="50%" y="70%">ESP</tspan></text>
+          </svg>
+        </div>
+        <div>
+          <svg width="90" height="90">
+            <rect/>
+            <text id="deldata" x="50%" y="30%" font-size="25" fill="black">Reload
+            <tspan x="50%" y="70%">Spiffs</tspan></text>
+          </svg>
+        </div>
+        <div>
+          <svg width="90" height="90">
+            <rect/>
+            <text id="clear" x="50%" y="30%" font-size="25" fill="black">Clear
+            <tspan x="50%" y="70%">NVS</tspan></text>
+          </svg>
+        </div>
+      </div>
+      <div class="configGroup">
+        <p id='configTable'></p>
+      </div>
+    </div>
+           
+    <div id="OTAUpload" class="tabcontent">
+      <br></br>
+      <form id="upload_form" enctype="multipart/form-data" method="post">
+        <input type="file" name="file1" id="file1" onchange="uploadFile()"><br>
+        <br></br>
+        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>
+        <h3 id="status"></h3>
+        <p id="loaded_n_total"></p>
+      </form>
+    </div>
+    
+    <script>
+
+      /*********** initialisation functions ***********/
+      
+      const baseHost = window.location.origin;
+      const wsServer = "ws://" + document.location.host + ":80/ws";
+      let ws;
+      let statusData; // stores all status data as key val pair
+      let cfgGroupNow = -1;
+      const $ = document.querySelector.bind(document);
+      const $$ = document.querySelectorAll.bind(document);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        try {
+          initWebSocket();
+          loadStatus();
+        } catch (error) {addLogLine("Error: " + error.message);}
+        setListeners();
+      });
+      
+      /*********** websocket functions ***********/
+      
+      // define websocket handling
+      function initWebSocket() {
+        addLogLine("Connect to: " + wsServer);
+        ws = new WebSocket(wsServer);
+        ws.onopen = onOpen;
+        ws.onclose = onClose;
+        ws.onmessage = onMessage; 
+      }
+      
+      // connect to websocket server
+      function onOpen(event) {
+        addLogLine("Connected");
+      }
+      
+      // process received message
+      function onMessage(messageEvent) {
+        if (messageEvent.data.startsWith("{")) {
+          let updateData = JSON.parse(messageEvent.data);
+          Object.keys(updateData).forEach(key => {
+            statusData[key] = updateData[key];
+            processStatus(key, false);
+          });
+        } else addLogLine(messageEvent.data);
+      }
+      
+      function onClose(event) {
+        addLogLine("Disconnected");
+        initWebSocket();
+      }
+      
+      /*********** page layout functions ***********/
+    
+      function openTab(evt, tabName) {
+        // control tab viewing
+        $$('.tabcontent').forEach(el => {el.style.display = "none";});
+        $('#' + tabName).style.display = "block";
+        $$('.tablinks').forEach(el => {el.classList.remove("active");});
+        evt.classList.add("active");
+      }
+
+      function accordian(accId) {
+        // accordian buttons to show / hide elements
+        let panel = $('#' + accId);
+        if (panel.style.display === "block") panel.style.display = "none";
+        else panel.style.display = "block";
+      }
+      
+       /*********** data processing functions ***********/
+      
+      async function loadStatus() {
+        // request and load current status
+        const response = await fetch(baseHost+'/status');
+        if (response.ok) {
+          statusData = await response.json();
+          Object.entries(statusData).forEach(([key, value]) => {
+            // replace each existing value with new value, using key name to match html tag id
+            if ($('text#'+key)) $('text#'+key).textContent = value;
+            else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
+          });
+          Object.keys(statusData).forEach(key => processStatus(key, false));
+          await sleep(1000);
+        } else console.log(response.status); 
+      }
+      
+      function sendUpdates(doAction) {    
+        // get each required update element and obtain id/name and value into array to send as json
+        let jarray = {};
+        jarray["action"] = doAction;
+        $$('.update-action').forEach(el => {
+          if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
+        });
+        // send as json to server
+        fetch(baseHost + '/update', {
+          method: 'POST', 
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(jarray),
+        });
+      }
+      
+      /*********** utility functions ***********/
+      
+      // add received line to log element
+      function addLogLine(text) {
+        let log = document.getElementById('applog');
+        let new_node = document.createTextNode(text + "\n");
+        log.append(new_node);
+      }
+      
+      function debounce(func, timeout = 500){
+        // debounce rapid clicks to prevent unnecessary fetches
+        let timer;
+        return (...args) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        };
+      }
+      
+      const debounceSendControl = debounce((query) => fetch(baseHost + encodeURI('/control?' + query)));
+      
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+      
+      /*********** command processing ***********/
+      
+      function setListeners() {
+        // add event listener for change events
+        setAppListeners();
+        // add event listener for click events
+        document.addEventListener("click", function (event) {
+          // svg rect elements, use id of its following text node
+          if (event.target.nodeName == 'rect') processStatus(event.target.nextElementSibling.id, true);
+          // tab buttons, use button text as tab id
+          if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
+        });
+        
+        // event listener for command entered on Log tab
+        document.addEventListener("keydown", function (event) {
+          if (event.target.id == 'txtCmd') {
+            let keyPress = event.keyCode || event.which;
+            if (keyPress == 13) sendCmd();
+          }
+        });
+      }
+      
+      function sendCmd() {
+        // send user command to websocket server
+        let txt = $('#txtCmd');
+        let line = txt.value;
+        if (line != "" && ws !== undefined) {
+          ws.send(line);
+          addLogLine("CMD: " + line);
+          txt.value = "";
+          txt.focus();
+        } else addLogLine("No command or no connection");
+      }
+       
+      function processStatus(key, fromUser) {
+        // called for each updated key
+        if (key == "config") getConfig("0");
+        else if (key == "save") debounceSendControl(key + '=1');
+        else if (key == "reset") debounceSendControl(key + '=1');
+        else if (key == "deldata") debounceSendControl(key + '=1');
+        else if (key == "clear") debounceSendControl(key + '=1');
+        else if (key == "clearWSlog") $('#applog').innerHTML = "";
+        else processAppStatus(key, fromUser);
+      }
+      
+      /*********** config functions ***********/
+      
+      async function getConfig(cfgGroup) {
+        // request config json for selected group
+        const response = await fetch('/status?123456789' + cfgGroup);
+        if (response.ok) {
+          const configData = await response.json();
+          // format received json into html table
+          buildTable(configData, cfgGroup);
+        } else console.log(response.status); 
+      }
+      
+      function buildTable(configData, cfgGroup) {
+        // dynamically build table of editable settings
+        const divShowData = document.getElementById('configTable');
+        divShowData.innerHTML = "";
+        if (cfgGroupNow != cfgGroup) {
+          cfgGroupNow = cfgGroup;
+          const table = document.createElement("table"); 
+          // Create table header row from heading names
+          const colHeaders = ['Setting Name', 'Setting Value']; 
+          let tr = table.insertRow(-1); 
+          for (let i = 0; i < colHeaders.length; i++) {
+            let th = document.createElement("th");    
+            th.innerHTML = colHeaders[i];
+            tr.appendChild(th);
+          }
+
+          // add each setting as a row containing setting name and setting value
+          let newRow = 1;
+          Object.keys(configData).forEach( key => {
+            if (newRow) tr = table.insertRow(-1);
+            let tabCell = tr.insertCell(-1);
+            if (newRow) {
+              tabCell.innerHTML = configData[key]; // name of setting
+              newRow = 0;
+            } else {
+              // input field for value of setting
+              tabCell.innerHTML = '<input type="text" class="configItem" name="' + key + '" value="' + configData[key] +'">'; 
+              newRow = 1;
+            }
+          })
+          // add the newly created table at placeholder
+          divShowData.appendChild(table);
+        } else cfgGroupNow = -1;
+      }
+
+       /*********** OTA functions ***********/
+       
+      async function uploadFile() {
+        // notify server to start ota task
+        const response = await fetch('/control?startOTA=1');
+        if (response.ok) {
+          // submit file for uploading
+          let file = $("#file1").files[0];
+          let formdata = new FormData();
+          formdata.append("file1", file);
+          let ajax = new XMLHttpRequest();
+          ajax.upload.addEventListener("progress", progressHandler, false);
+          ajax.addEventListener("load", completeHandler, false);
+          ajax.addEventListener("error", errorHandler, false);
+          ajax.addEventListener("abort", abortHandler, false);
+          ajax.open("POST", baseHost + ':82/upload');
+          ajax.send(formdata);
+        } else console.log(response.status); 
+      }
+
+      function progressHandler(event) {
+        $("#loaded_n_total").innerHTML = "Uploaded " + event.loaded + " of " + event.total + " bytes";
+        let percent = (event.loaded / event.total) * 100;
+        $("#progressOta").value = Math.round(percent);
+        $("#status").innerHTML = Math.round(percent) + "% transferred";
+        if (event.loaded  == event.total) $("#status").innerHTML = 'Uploaded, wait for completion result';
+      }
+
+      function completeHandler(event) {
+        $("#status").innerHTML = event.target.responseText;
+        $("#progressOta").value = 0;
+      }
+
+      function errorHandler(event) {
+        $("#status").innerHTML = "Upload Failed";
+        $("#progressOta").value = 0;
+      }
+
+      function abortHandler(event) {
+        $("#status").innerHTML = "Upload Aborted";
+        $("#progressOta").value = 0;
+      }
+      
+      /****************** app specific ********************/
+      
+      function setAppListeners() {
+        // dummy
+      }
+      
+      function processAppStatus(key, fromUser) {
+        // dummy
+      }
+      
+    </script>
+  </body>
+</html>
