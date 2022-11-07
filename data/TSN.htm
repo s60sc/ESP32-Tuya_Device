@@ -172,12 +172,7 @@
         font-weight:bold;
         color: navy;
     }
-    
-   .configGroup td {
-      border: solid 2px #ddd;
-    }
-    
-    
+
     #applog {
       height:90%;
       width:90%;
@@ -185,6 +180,9 @@
       overflow:auto;
     }
     
+   .configGroup td {
+      border: solid 2px #ddd;
+    }
     th, td {
       border-collapse: collapse;
       padding: 2px 3px;
@@ -227,7 +225,8 @@
         <div>
           <svg width="90" height="90">
             <rect/>
-            <text id="config" x="50%" y="50%" font-size="25" fill="black">Config</text>
+            <text id="config" x="50%" y="30%" font-size="25" fill="black">Wifi
+            <tspan x="50%" y="70%">Config</tspan></text>
           </svg>
         </div>
         <div>
@@ -280,8 +279,8 @@
       
       const baseHost = window.location.origin;
       const wsServer = "ws://" + document.location.host + ":80/ws";
-      let ws;
-      let statusData; // stores all status data as key val pair
+      let ws = null;
+      let statusData = {}; // stores all status data as key val pair
       let cfgGroupNow = -1;
       const $ = document.querySelector.bind(document);
       const $$ = document.querySelectorAll.bind(document);
@@ -290,7 +289,7 @@
         try {
           initWebSocket();
           loadStatus();
-        } catch (error) {addLogLine("Error: " + error.message);}
+        } catch (error) {sendLog("Error: " + error.message);}
         setListeners();
       });
       
@@ -298,31 +297,49 @@
       
       // define websocket handling
       function initWebSocket() {
-        addLogLine("Connect to: " + wsServer);
+        sendLog("Connect to: " + wsServer);
         ws = new WebSocket(wsServer);
         ws.onopen = onOpen;
         ws.onclose = onClose;
         ws.onmessage = onMessage; 
+        ws.onerror = onError;       
       }
       
       // connect to websocket server
       function onOpen(event) {
-        addLogLine("Connected");
+        sendLog("Connected");
       }
       
-      // process received message
+      // process received WS message
       function onMessage(messageEvent) {
         if (messageEvent.data.startsWith("{")) {
+          // json data
           let updateData = JSON.parse(messageEvent.data);
-          Object.keys(updateData).forEach(key => {
-            statusData[key] = updateData[key];
-            processStatus(key, false);
-          });
+          let filter = updateData.cfgGroup;
+          delete updateData.cfgGroup;
+          if (filter == "-1") {
+            // status update
+            Object.entries(updateData).forEach(([key, value]) => {
+              statusData[key] = value;
+              // replace each existing value with new value, using key name to match html tag id
+              if ($('text#'+key)) $('text#'+key).textContent = value;
+              else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
+              processStatus(key, false);
+            });
+          } else {
+            // format received config json into html table
+            buildTable(updateData, filter);
+          }
         } else addLogLine(messageEvent.data);
       }
       
+      function onError(event) {
+        sendLog("WS Error: " + event.code);
+      }
+      
       function onClose(event) {
-        addLogLine("Disconnected");
+        // event.code is usually 1006 if server not available
+        sendLog("Disconnected: " + event.code + ' - ' + event.reason);
         initWebSocket();
       }
       
@@ -411,28 +428,47 @@
           // tab buttons, use button text as tab id
           if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
         });
-        
-        // event listener for command entered on Log tab
-        document.addEventListener("keydown", function (event) {
-          if (event.target.id == 'txtCmd') {
-            let keyPress = event.keyCode || event.which;
-            if (keyPress == 13) sendCmd();
-          }
+        // input fields of given class
+        if (event.target.classList.contains('configItem')) { 
+         fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
+        }
+        // event listener to close web socket immediately on leaving page
+        window.addEventListener('beforeunload', function (event) {
+          if (ws) ws.terminate();
         });
       }
       
-      function sendCmd() {
+      function sendWsCmd() {
         // send user command to websocket server
         let txt = $('#txtCmd');
         let line = txt.value;
         if (line != "" && ws !== undefined) {
-          ws.send(line);
-          addLogLine("CMD: " + line);
+          sendCmd(line);
           txt.value = "";
           txt.focus();
-        } else addLogLine("No command or no connection");
+        } else sendLog("No command or no connection");
       }
        
+      function sendCmd(reqStr) {
+        ws.send(reqStr);
+        sendLog("Cmd: " + reqStr);
+      }
+      
+      function sendLog(reqStr) {
+        let date = new Date();
+        addLogLine("[" + date.toLocaleTimeString() + " Web] " + reqStr);
+      }
+      
+      function sendWsUpdates(doAction) {    
+        // get each required update element and obtain id/name and value into array to send as json 
+        let jarray = {};
+        jarray["action"] = doAction;
+        $$('.update-action').forEach(el => {
+          if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
+        });
+        sendCmd('U' + JSON.stringify(jarray));
+      }
+      
       function processStatus(key, fromUser) {
         // called for each updated key
         if (key == "config") getConfig("0");
@@ -475,15 +511,17 @@
           // add each setting as a row containing setting name and setting value
           let newRow = 1;
           Object.keys(configData).forEach( key => {
-            if (newRow) tr = table.insertRow(-1);
-            let tabCell = tr.insertCell(-1);
-            if (newRow) {
-              tabCell.innerHTML = configData[key]; // name of setting
-              newRow = 0;
-            } else {
-              // input field for value of setting
-              tabCell.innerHTML = '<input type="text" class="configItem" name="' + key + '" value="' + configData[key] +'">'; 
-              newRow = 1;
+            if (key != "cfgGroup") { // skip over this entry
+              if (newRow) tr = table.insertRow(-1);
+              let tabCell = tr.insertCell(-1);
+              if (newRow) {
+                tabCell.innerHTML = configData[key]; // name of setting
+                newRow = 0;
+              } else {
+                // input field for value of setting
+                tabCell.innerHTML = '<input type="text" class="configItem" name="' + key + '" value="' + configData[key] +'">'; 
+                newRow = 1;
+              }
             }
           })
           // add the newly created table at placeholder
@@ -535,14 +573,19 @@
       }
       
       /****************** app specific ********************/
-      
-      function setAppListeners() {
-        // dummy
-      }
+
       
       function processAppStatus(key, fromUser) {
-        // dummy
-      }
+      
+      function setAppListeners() {
+        // event listener for command entered on Log tab
+        document.addEventListener("keydown", function (event) {
+          if (event.target.id == 'txtCmd') {
+            let keyPress = event.keyCode || event.which;
+            if (keyPress == 13) sendWsCmd();
+          }
+        });
+      }                                                     
       
     </script>
   </body>
