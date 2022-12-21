@@ -1,4 +1,7 @@
-<!DOCTYPE html>     
+<!DOCTYPE html>      
+<!-- 
+  s60sc 2022 
+-->                                
 <html>     
   <head>
     <meta charset="UTF-8"/>  
@@ -8,6 +11,11 @@
   <style>
     body {
       font-family: Helvetica  !important;
+    }
+    
+    .fixed {
+      position: fixed;
+      top: 0;
     }
     
     /* Style the tab */
@@ -183,6 +191,7 @@
    .configGroup td {
       border: solid 2px #ddd;
     }
+    
     th, td {
       border-collapse: collapse;
       padding: 2px 3px;
@@ -198,12 +207,13 @@
   </style>
   
   <body>
-    <div class="tab">
+    <div class="tab fixed">
       <button class="tablinks active">Show Log</button>
       <button class="tablinks">Edit Config</button>
       <button class="tablinks">OTA Upload</button>
     </div>
-    <div id="ShowLog" class="tabcontent" style="display:block">
+    </br></br></br>
+    <div id="ShowLog" class="tabcontent" style="display:block"; top:100px">
       <h2>Monitor & Enter Tuya Commands</h2>
       <div class="grid-cols1">
         <svg width="150" height="40">
@@ -263,11 +273,11 @@
     </div>
            
     <div id="OTAUpload" class="tabcontent">
-      <br></br>
+      <br/><br/>
       <form id="upload_form" enctype="multipart/form-data" method="post">
-        <input type="file" name="file1" id="file1" onchange="uploadFile()"><br>
-        <br></br>
-        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>
+        <input type="file" name="file1" id="file1" onchange="uploadFile()">
+        <br/><br/>
+        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>%
         <h3 id="status"></h3>
         <p id="loaded_n_total"></p>
       </form>
@@ -280,6 +290,7 @@
       const baseHost = window.location.origin;
       const wsServer = "ws://" + document.location.host + ":80/ws";
       let ws = null;
+      let hbInterval = null;
       let statusData = {}; // stores all status data as key val pair
       let cfgGroupNow = -1;
       const $ = document.querySelector.bind(document);
@@ -305,9 +316,19 @@
         ws.onerror = onError;       
       }
       
+      // periodically check that connection is still up
+      function heartbeat() {
+        if (!ws) return;
+        if (ws.readyState !== 1) return;
+        sendCmd("H");
+        clearTimeout(hbInterval);
+        hbInterval = setTimeout(heartbeat, 30000);
+      }
+      
       // connect to websocket server
       function onOpen(event) {
         sendLog("Connected");
+        heartbeat();
       }
       
       // process received WS message
@@ -338,9 +359,10 @@
       }
       
       function onClose(event) {
-        // event.code is usually 1006 if server not available
         sendLog("Disconnected: " + event.code + ' - ' + event.reason);
-        initWebSocket();
+        // event.code is usually 1006 if server not available, or another web page is already open
+        if (event.code == 1006) alert("Closed websocket as a newer connection was made");
+        else initWebSocket(); // retry if any other reason
       }
       
       /*********** page layout functions ***********/
@@ -399,6 +421,10 @@
         let log = document.getElementById('applog');
         let new_node = document.createTextNode(text + "\n");
         log.append(new_node);
+        // auto scroll new entry unless scroll bar is not at bottom
+        const bottom = 40; // double font size
+        const pos = Math.abs(log.scrollHeight - log.clientHeight - log.scrollTop);
+        if (pos < bottom) log.scrollTop = log.scrollHeight;
       }
       
       function debounce(func, timeout = 500){
@@ -429,9 +455,12 @@
           if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
         });
         // input fields of given class
-        if (event.target.classList.contains('configItem')) { 
-         fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
-        }
+        document.addEventListener("change", function (event) {
+          // config input fields 
+          if (event.target.classList.contains('configItem')) { 
+           fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
+          }
+        });
         // event listener to close web socket immediately on leaving page
         window.addEventListener('beforeunload', function (event) {
           if (ws) ws.terminate();
@@ -573,12 +602,12 @@
       }
       
       /****************** app specific ********************/
-
       
       function processAppStatus(key, fromUser) {
+      }
       
       function setAppListeners() {
-        // event listener for command entered on Log tab
+        // event listener for user command entered on Log tab
         document.addEventListener("keydown", function (event) {
           if (event.target.id == 'txtCmd') {
             let keyPress = event.keyCode || event.which;

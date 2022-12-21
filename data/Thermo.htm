@@ -1,4 +1,7 @@
 <!DOCTYPE html>     
+<!-- 
+  s60sc 2022 
+-->
 <html>     
   <head>
     <meta charset="UTF-8"/>  
@@ -8,6 +11,11 @@
   <style>
     body {
       font-family: Helvetica  !important;
+    }
+    
+    .fixed {
+      position: fixed;
+      top: 0;
     }
     
     /* Style the tab */
@@ -189,13 +197,14 @@
   </style>
   
   <body>
-    <div class="tab">
+    <div class="tab fixed">
       <button class="tablinks active">Thermo</button>
       <button class="tablinks">Show Log</button>
       <button class="tablinks">Edit Config</button>
       <button class="tablinks">OTA Upload</button>
     </div>
-    <div id="Thermo" class="tabcontent" style="display:block">
+    </br></br></br>
+    <div id="Thermo" class="tabcontent" style="display:block; top:100px">
       <div>
         <svg width="400" height="60">
           <rect style="fill:saddleBrown; rx:0%"/>
@@ -208,7 +217,7 @@
           <svg width="150" height="100">
             <rect/>
             <text id="currTemp" x="50%" y="70%" font-size="40" fill="black"></text>
-            <text x="50%" y="30%" font-size="30" fill="white">Current</text>
+            <text id="whichTemp" x="50%" y="30%" font-size="30" fill="white">Current</text>
           </svg>
         </div>
         <div id="arrowAnim" style="display:none">
@@ -343,6 +352,10 @@
           <div><input type="number" id="tempCal" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
           <div>Backlash &#x2103;:</div>
           <div><input type="number" id="tempLash" min="-5" max="5" value="0" step=".1" class='tempAttrs'></div>
+          <div>Alpha:</div>
+          <div><input type="number" id="alpha" min="0" max="1" value="1" step=".1" class='tempAttrs'></div>
+          <div>Drift:</div>
+          <div><input type="number" id="drift" min="0" max="5" value="3" step="1" class='tempAttrs'></div>
           <div>Day Setting:</div>
           <div>
             <svg width="80" height="32" class="setButs">
@@ -387,6 +400,13 @@
             </svg>
           </div>
           -->
+          <div>Controller:</div>
+          <div>
+            <svg width="80" height="32" class="setButs">
+              <rect style="rx:10%"/>
+              <text x="50%" y="50%" font-size="25" fill="white" id="setCtrl"></text>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -457,11 +477,11 @@
     </div>
            
     <div id="OTAUpload" class="tabcontent">
-      <br></br>
+      <br/><br/>
       <form id="upload_form" enctype="multipart/form-data" method="post">
-        <input type="file" name="file1" id="file1" onchange="uploadFile()"><br>
-        <br></br>
-        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>
+        <input type="file" name="file1" id="file1" onchange="uploadFile()">
+        <br/><br/>
+        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>%
         <h3 id="status"></h3>
         <p id="loaded_n_total"></p>
       </form>
@@ -474,6 +494,7 @@
       const baseHost = window.location.origin;
       const wsServer = "ws://" + document.location.host + ":80/ws";
       let ws = null;
+      let hbInterval = null;
       let statusData = {}; // stores all status data as key val pair
       let cfgGroupNow = -1;
       const $ = document.querySelector.bind(document);
@@ -504,12 +525,14 @@
         if (!ws) return;
         if (ws.readyState !== 1) return;
         sendCmd("H");
-        setTimeout(heartbeat, 30000);
+        clearTimeout(hbInterval);
+        hbInterval = setTimeout(heartbeat, 30000);
       }
       
       // connect to websocket server
       function onOpen(event) {
         sendLog("Connected");
+        sendCmd("I"); // sync web page with MCU
         heartbeat();
       }
       
@@ -541,9 +564,10 @@
       }
       
       function onClose(event) {
-        // event.code is usually 1006 if server not available
         sendLog("Disconnected: " + event.code + ' - ' + event.reason);
-        initWebSocket();
+        // event.code is usually 1006 if server not available, or another web page is already open
+        if (event.code == 1006) alert("Closed websocket as a newer connection was made");
+        else initWebSocket(); // retry if any other reason
       }
       
       /*********** page layout functions ***********/
@@ -602,6 +626,10 @@
         let log = document.getElementById('applog');
         let new_node = document.createTextNode(text + "\n");
         log.append(new_node);
+        // auto scroll new entry unless scroll bar is not at bottom
+        const bottom = 40; // double font size
+        const pos = Math.abs(log.scrollHeight - log.clientHeight - log.scrollTop);
+        if (pos < bottom) log.scrollTop = log.scrollHeight;
       }
       
       function debounce(func, timeout = 500){
@@ -632,9 +660,12 @@
           if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
         });
         // input fields of given class
-        if (event.target.classList.contains('configItem')) { 
-         fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
-        }
+        document.addEventListener("change", function (event) {
+          // config input fields 
+          if (event.target.classList.contains('configItem')) { 
+           fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
+          }
+        });
         // event listener to close web socket immediately on leaving page
         window.addEventListener('beforeunload', function (event) {
           if (ws) ws.terminate();
@@ -780,11 +811,15 @@
       let isOn = true;
       let minTemp;
       let maxTemp;
+      let smoothTemp;
+      let rawTemp;
+      let showSmooth = true;
       let onoff = ['Off', 'On'];
       let prog = ['Home', 'Auto'];
       let days = ['7', '6+1', '5+2']; 
       let light = ['Off', 'Low', 'Mid', 'High'];
       let sensor = ["Room", "Floor", "Both"];
+      let ctrlName = ["MCU", "ESP"];
       
       function processAppStatus(key, fromUser) {
         // called for each updated key
@@ -795,6 +830,7 @@
         else if (key == "doSchedule") accordian('schedule');
         else if (key == "switchDisp") changeSwitch(fromUser);
         else if (key == "currTemp") setCurrTemp();
+        else if (key == "rawTemp") setCurrTemp();
         else if (key == "outputOn") changeOutput(statusData[key]);
         else if (key == "tgtTemp") changeTgtTemp(0);
         else if (key == "frost") changeSetting(key, onoff, fromUser);
@@ -809,6 +845,7 @@
         else if (key == "doReset") doMCUreset(fromUser);
         //else if (key == "soundOn") changeSetting(key, onoff);
         //else if (key == "opReverse") changeSetting(key, onoff);
+        else if (key == "setCtrl") changeSetting(key, ctrlName, fromUser);
       }
       
       function changeSwitch(fromUser) {
@@ -840,17 +877,22 @@
       
       function setCurrTemp() {
         if (statusData['fault'] == 1) $('text#currTemp').textContent = "ERR"; 
-        else $('text#currTemp').textContent = statusData['currTemp']+"\u2103";
+        else {
+          smoothTemp = statusData['currTemp']+"\u2103"; // latest smoothed temperature
+          rawTemp = statusData['rawTemp']+"\u2103"; // latest unsmoothed temperature
+          // check which value to show
+          $('text#currTemp').textContent = showSmooth ? smoothTemp : rawTemp;
+        }
       }
 
       function changeTgtTemp(incVal) {
         if (isOn) {
           let newTemp = +statusData["tgtTemp"] + incVal;
-          if (newTemp <= maxTemp && newTemp >= minTemp) {
+          if ((incVal > 0 && newTemp <= maxTemp) || (incVal < 0 && newTemp >= minTemp)) {
             statusData["tgtTemp"] = newTemp;
-            $('text#tgtTemp').textContent = newTemp + "\u2103";
             if (+incVal != 0) debounceSendControl('tgtTemp=' + newTemp);
           } 
+          $('text#tgtTemp').textContent = newTemp + "\u2103";
         } else {
           $('text#tgtTemp').textContent = "OFF";
           changeOutput(0);
@@ -885,7 +927,16 @@
             debounceSendControl(event.target.id + '=' + event.target.value);
           }
         });
-        // event listener for user command entered on Config tab
+        // add event listener to toggle which current temp shown
+        document.addEventListener("click", function (event) {
+          if (event.target.nodeName == 'rect') {
+            if (event.target.nextElementSibling.id == 'currTemp') {
+              showSmooth = !showSmooth;
+              $('text#whichTemp').textContent = showSmooth ? 'Current' : 'Raw';
+            }
+          }
+        });
+        // event listener for user command entered on Log tab
         document.addEventListener("keydown", function (event) {
           if (event.target.id == 'txtCmd') {
             let keyPress = event.keyCode || event.which;

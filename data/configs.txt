@@ -4,39 +4,42 @@ AP_ip~~0~AP IP Address if not 192.168.4.1
 AP_sn~~0~AP subnet
 Auth_Name~~0~Optional user name for web page login
 Auth_Pass~~0~Optional password for web page login
-ST_Pass~********~0~Wifi SSID password
-ST_SSID~bisk2ts~0~Wifi SSID name
+ST_Pass~~0~Wifi SSID password
+ST_SSID~~0~Wifi SSID name
 ST_gw~192.168.1.1~0~Router IP address
-ST_ip~192.168.1.163~0~Static IP address
+ST_ip~192.168.1.162~0~Static IP address
 ST_ns1~192.168.1.1~0~DNS server
 ST_ns2~~0~Alt DNS server
 ST_sn~255.255.255.0~0~Router subnet
 allowAP~0~0~Allow AP Fallback if no router (0/1)
-avgOn~00:00:00~2~Average heating time per day
+alpha~0.2~98~na
+avgOn~0~2~Average heating time per day
 backLight~2~98~na
 childLock~0~98~na
-currTemp~19.0~98~na
+currTemp~18.8~98~na
 daySetting~0~98~na
 doReset~0~98~na
+drift~3~98~na
 fault~0~98~na
 floorMax~21~98~na
 frost~0~98~na
-hostName~ESP-TUYADEVICE_4B4E76A0~0~Device host name
-kWh~0.0kWh~2~Average energy use per day
+hostName~~0~Device host name
+kWh~0kWh~2~Average energy use per day
 opReverse~0~98~na
 outputOn~0~98~na
-pcntOn~0.0%~2~% time heating on
+pcntOn~0%~2~% time heating on
 progMode~1~98~na
 restart~~99~na
-roomMax~21~98~na
+roomMax~19~98~na
+setCtrl~1~98~na
 slotTemp1~17~98~na
 slotTemp2~19~98~na
 slotTemp3~19~98~na
 slotTemp4~19~98~na
 slotTemp5~19~98~na
-slotTemp6~15~98~na
+slotTemp6~5~98~na
 slotTemp7~19~98~na
-slotTemp8~15~98~na
+slotTemp8~5~98~na
 slotTime1~08:00~98~na
 slotTime2~10:00~98~na
 slotTime3~11:30~98~na
@@ -47,10 +50,10 @@ slotTime7~10:00~98~na
 slotTime8~23:30~98~na
 soundOn~1~98~na
 switchDisp~1~98~na
-tempCal~0.0~98~na
+tempCal~1~98~na
 tempLash~1.0~98~na
 tempSensor~1~98~na
 tgtTemp~19.0~98~na
-totalOn~0-00:00:00~2~Total heating time
-upTime~0-00:00:00~2~Elapsed time since restart
+totalOn~0~2~Total heating time
+upTime~0~2~Elapsed time since restart
 wifiTimeoutSecs~30~0~WiFi connect timeout (secs)
