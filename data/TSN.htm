@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>      
 <!-- 
   s60sc 2022 
@@ -5,617 +6,1016 @@
 <html>     
   <head>
     <meta charset="UTF-8"/>  
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Tuya Sniffer</title>
-  </head>
-  
-  <style>
-    body {
-      font-family: Helvetica  !important;
-    }
-    
-    .fixed {
-      position: fixed;
-      top: 0;
-    }
-    
-    /* Style the tab */
-    .tab {
-      overflow: hidden;
-      border: 1px solid #ccc;
-      background-color: #f1f1f1;
-    }
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="80" font-size="80">👃</text></svg>'>
 
-    /* Style the buttons inside the tab */
-    .tab button {
-      background-color: inherit;
-      float: left;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      padding: 14px 16px;
-      transition: 0.3s;
-      font-size: 17px;
-    }
-
-    /* Change background color of buttons on hover */
-    .tab button:hover {
-      background-color: #ddd;
-    }
-
-    /* Create an active/current tablink class */
-    .tab button.active {
-      background-color: #ccc;
-    }
-
-    /* Style the tab content */
-    .tabcontent {
-      display: none;
-      padding: 6px 12px;
-      border: 1px solid #ccc;
-      border-top: none;
-    }
-    
-    input[type="number"], input[type="time"] {
-      font-size:30px;
-      border:0px;
-    }
-    input[type='number']{
-      width: 110px;
-      text-align: center;
-    } 
-    input[type=number]::-webkit-inner-spin-button {
-      opacity: 1
-    }
-
-    .grid-cols1a {
-      grid-template-columns: 400px;
-      display: grid;
-      color: tan;
-      font-size: 45px;
-      justify-items: center;
-      align-items: center;
-      height: 60px
-    }
-
-    .grid-cols1 {
-      grid-template-columns: 400px;
-    }
-    
-    .grid-cols2a {
-       grid-template-columns: 250px 150px;
-     }
-     
-    .grid-cols3a {
-       grid-template-columns: 100px 150px 150px;
-     }
+    <style>
+      :root {
+        /* colors used on web pages - see https://www.w3schools.com/colors/colors_names.asp */
+        --buttonReady: silver;
+        --buttonActive: #A0A0A0; /* mid gray */
+        --buttonHover: #D0D0D0; /* light gray */
+        --buttonText: white;
+        --buttonLabel: black;
+        --itemInactive: #E0E0E0; /* very light gray */
+        --menuBackground: silver;
+        --inputText: navy;
+        --pageText: black; 
+        --inputBackground: WhiteSmoke; 
+        --alertMsg: red;                                 
+        --itemBorder: silver; 
+        --pageBackground: white;
         
-    .grid-cols3b {
-      grid-template-columns: 150px 100px 150px;
-    }
-    
-    .grid-cols3c {
-      grid-template-columns: 250px 75px 75px;
-    }
-         
-    .grid-cols4 {
-      grid-template-columns: 100px 100px 100px 100px;
-    }
-         
-    .grid-cols5 {
-      grid-template-columns: 120px 120px 120px 120px 120px;
-    }
-    
-    .grid-cols1, .grid-cols2a, .grid-cols3a, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols5 {
-      display: grid;
-      background-color: none;
-      font-size: 30px;
-      border: 0px solid black;
-    }
-    
-    .grid-cols1, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols5, .setButs {
-      text-align: center;
-      dominant-baseline: middle;
-      text-anchor: middle;
-    }
-    
-    .grid-cols2a, .grid-cols3a {
-      text-align: left;
-    }
-    
-    #arrowAnim {
-      width: 50%;
-      height: 50%;
-    }
+        /* element sizes */
+        --bodySize:1rem; /* used as basis for element, padding, and font sizes */
+        --buttonSize: var(--bodySize);
+        --buttonHalf: calc(var(--buttonSize) / 2);
+        --buttonQuart: calc(var(--buttonSize) / 4);
+        --buttonDbl: calc(var(--buttonSize) * 2);
+        --inputSize: calc(var(--bodySize) * 0.9);
+        --headingSize: calc(var(--bodySize) * 1.25);
+        --subheadingSize: var(--bodySize);
+        --footerSize: calc(var(--bodySize) * 0.7);   
+      }
 
-    .arrow {
-      width: 15px;
-      height: 15px;
-      border: 5px solid;
-      border-color: red transparent transparent red;
-      transform: rotate(135deg);
-    }
-
-    .arrowSliding {
-      position: absolute;
-      -webkit-animation: slide 1s linear infinite; 
-    }
-
-    @-webkit-keyframes slide {
-       0% { opacity:1; transform: translateX(-1vw); }
-       33% { opacity:0.7; transform: translateX(1vw); }
-       67% { opacity:0.3; transform: translateX(3vw); }
-       100% { opacity:0.1; transform: translateX(5vw); }
-    }
-
-    .panel {
-      padding: 0 18px;
-      display: none;
-      background-color: white;
-      overflow: hidden;
-    }
+      body {
+        font-family: Helvetica  !important;
+        background: var(--pageBackground);
+        color: var(--pageText);
+        font-size: var(--bodySize);      
+      }
+      
+      .hidden {
+        display: none
+      }
+      
+      progress {
+        accent-color: var(--buttonActive); 
+        width: calc(var(--buttonSize) * 15);
+      }
+      
+      .fixed {
+        position: fixed;
+        top: 0;
+      }
+      
+      .alertMsg {
+        left:10%;
+        bottom: var(--buttonDbl);
+        position:absolute;
+        display:block;
+        color:var(--alertMsg);
+        z-index:20;
+        height: var(--buttonDbl);
+      }
     
-    rect {
-       fill: silver;
-       width: 100%;
-       height: 100%; 
-       x: 0;
-       y: 0;
-       rx: 15%;
-     }
-    
-    rect:hover {
-      fill: DarkGrey;
-    }
-    
-    rect:active {
-      fill: DarkSeaGreen;
-    }
-  
-    text {
-      pointer-events: none;
-    }
-    
-    input, #applog  {
-        font:20px 'Courier New';
+      .header {
+        font-size: var(--headingSize);
+        padding-left: var(--buttonHalf);
         font-weight:bold;
-        color: navy;
-    }
-
-    #applog {
-      height:90%;
-      width:90%;
-      border:2px solid #ccc;
-      overflow:auto;
-    }
+      }
+      
+      .subheader {
+        font-style: italic;
+        font-size: var(--subheadingSize);
+        padding-left: var(--buttonQuart);
+      }
     
-   .configGroup td {
-      border: solid 2px #ddd;
-    }
-    
-    th, td {
-      border-collapse: collapse;
-      padding: 2px 3px;
-      text-align: left;
-    }
-    table {
-      border: 0px
-    }
-    th {
-      font-weight:bold;
-    }
+      .tab {
+        display: flex;
+        overflow: hidden;
+        background: var(--menuBackground);
+      }
 
-  </style>
-  
+      .tab button {
+        background: var(--buttonReady);
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: var(--buttonHalf);
+        transition: 0.3s;
+        font-size: calc(var(--buttonSize) * 1.1);
+      }
+
+      .tab button.active {
+        box-shadow: 0 0 0 var(--buttonQuart)  var(--buttonActive);
+        background: var(--buttonActive);
+      }
+      
+      .tab button.hover {
+        background: var(--buttonHover);
+      }
+      
+      .tabcontent {
+        display: none;
+      }
+
+      .grid-cols1a {
+        grid-template-columns: 400px;
+        display: grid;
+        color: tan;
+        font-size: 45px;
+        justify-items: center;
+        align-items: center;
+        height: 60px
+      }
+
+      .grid-cols1 {
+        grid-template-columns: calc(var(--buttonSize) * 25);
+      }
+      
+      .grid-cols2a {
+         grid-template-columns: calc(var(--buttonSize) * 15) calc(var(--buttonSize) * 9);
+       }
+       
+      .grid-cols3a {
+         grid-template-columns: calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 9) calc(var(--buttonSize) * 9);
+       }
+          
+      .grid-cols3b {
+        grid-template-columns: calc(var(--buttonSize) * 9) calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 9);
+      }
+      
+      .grid-cols3c {
+        grid-template-columns: calc(var(--buttonSize) * 15) calc(var(--buttonSize) * 5) calc(var(--buttonSize) * 5);
+      }
+           
+      .grid-cols4 {
+        grid-template-columns: calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 6);
+      }
+           
+      .grid-cols5 {
+        grid-template-columns: calc(var(--buttonSize) * 7) calc(var(--buttonSize) * 7)  calc(var(--buttonSize) * 7) calc(var(--buttonSize) * 7) calc(var(--buttonSize) * 7);
+      }
+      
+      .grid-cols1, .grid-cols2a, .grid-cols3a, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols5 {
+        display: grid;
+        background: none;
+        text-align: center;
+        font-size: calc(var(--buttonSize) *2);
+        fill: var(--buttonLabel);               
+        border: 0px solid var(--itemBorder);
+      }
+      
+      .grid-cols1, .grid-cols3b, .grid-cols3c, .grid-cols4, .grid-cols5 {
+        text-align: center;
+        dominant-baseline: middle;
+        text-anchor: middle;
+      }
+      
+      .grid-cols2a, .grid-cols3a {
+        text-align: left;
+      }
+      
+      .cfgTitle {
+        grid-column: 1/5;
+        text-align: left;
+      }
+      
+      svg {
+        width: calc(var(--buttonSize) * 8);
+        height: var(--buttonDbl);  
+      }
+   
+      rect {
+         fill: var(--buttonReady);
+         width: 100%;
+         height: 100%; 
+         x: 0;
+         y: 0;
+         ry: 15%;
+       }
+      
+      rect:active {
+        fill: var(--buttonActive);
+      }
+    
+      rect:hover {
+        fill: var(--buttonHover);
+      }
+      
+      text {
+      /* font-size: var(--buttonSize); 
+        fill: var(--buttonText); 
+        transform: translate(50%,50%);  */
+        pointer-events: none;        
+      }
+      
+      .panel {
+        padding: 0 var(--buttonSize);
+        display: none;
+        background-color: var(--pageBackground);
+        overflow: hidden;
+      }
+      
+      input, #applog  {
+        font: var(--inputSize) 'Courier New';
+        font-weight:bold;
+        color: var(--inputText);
+        background: var(--inputBackground); 
+        min-width: calc(var(--buttonSize) * 10);    
+      }
+      
+      input[type="text"]{
+        font-size: var(--inputSize); 
+        width: calc(var(--buttonSize) * 6);
+      }
+      
+      input[type="number"]:not(.configItem), input[type="time"] {
+        font-size: var(--buttonDbl);
+        border: 1px solid var(--itemBorder);
+        margin-bottom: var(--buttonQuart);
+        min-width: calc(var(--buttonSize) * 7);
+        text-align: center;
+      } 
+      
+      input[type=number]::-webkit-inner-spin-button {
+        opacity: 1
+      }
+      
+      
+      /* checkbox toggle switch slider */
+            
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: calc(var(--buttonSize) * 2);
+        height: var(--buttonSize);
+        top: var(--buttonHalf);
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        border-radius: var(--buttonSize);
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--itemInactive);
+        width: calc(var(--buttonSize) * 3);             
+        transition: .4s;
+      }
+
+      .slider:before {
+        position: absolute;
+        border-radius: 50%;
+        content: "";
+        height: var(--buttonSize);
+        width: var(--buttonSize);
+        left: var(--buttonQuart);
+        background: var(--inputBackground);
+        transition: .4s;
+      }
+
+      input:checked + .slider {
+        background-color: var(--buttonActive);
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(calc(var(--buttonSize)*1.5));
+      }
+      
+      #applog {
+        height:90%;
+        width:90%;
+        border:2px solid var(--itemBorder);
+        overflow:auto;
+        background: var(--inputBackground);         
+      }
+      
+      select {
+        border: 1px solid var(--menuBackground);
+        font-size: var(--inputSize);
+        outline: 0;
+        border-radius: var(--buttonQuart);
+        margin-top: 2px;
+      }
+      
+      .selectField {
+         height: calc(var(--inputSize) * 1.5);
+      }
+      
+      table {
+        border-collapse:collapse; 
+        table-layout:fixed;
+        background: var(--menuBackground);
+        text-align: left;
+      }
+      
+      th {
+        font-weight:bold; 
+      }
+      
+      .config-group th, .config-group td {
+        border: 0;
+        padding: var(--buttonHalf) var(--buttonHalf) 0 var(--buttonHalf); 
+        padding-left: var(--buttonSize);
+        line-height: var(--buttonDbl);
+        font-size: var(--buttonSize);
+      }
+
+      .configGroup td input[type="number"] {
+        font-size: var(--buttonSize);
+      }              
+
+      .svgCols3b {
+        width: calc(var(--buttonSize) * 10); 
+        height: calc(var(--buttonSize) * 6); 
+      }
+      
+      .lowerCols3b {
+        font-size: calc(var(--buttonSize) * 2.5);
+        transform: translate(50%,70%);                 
+      }
+      
+      .upperCols3b {
+        fill: var(--buttonText);
+        transform: translate(50%,30%); 
+      }
+      
+      .svgCols3c {
+        width: calc(var(--buttonSize) * 2.5);  
+        height: var(--buttonDbl);
+        fill: var(--buttonText);
+      }
+      
+      .svgCols4 {
+        width: calc(var(--buttonSize) * 5);  
+        height: calc(var(--buttonSize) * 5);  
+      }
+
+      .upperCols4 {
+        font-size: calc(var(--buttonSize) * 1.5);
+        fill: var(--buttonText);
+        transform: translate(50%,30%);   
+      }
+      
+      .svgCols1 {
+        width: calc(var(--buttonSize) * 24);  
+        height: calc(var(--buttonSize) * 3);
+      }
+
+     .svgCols5 {
+        width: calc(var(--buttonSize) * 6);  
+        height: calc(var(--buttonSize) * 6); 
+        font-size: calc(var(--buttonSize) * 1.5);
+      }
+      
+      .upperText {
+        transform: translate(50%,30%);  
+      }
+      
+      .lowerText {
+        transform: translate(50%,70%);  
+      }
+      
+      .midText {
+        transform: translate(50%,50%); 
+      }               
+      
+    </style>
+  </head>
   <body>
     <div class="tab fixed">
-      <button class="tablinks active">Show Log</button>
-      <button class="tablinks">Edit Config</button>
-      <button class="tablinks">OTA Upload</button>
+      <button class="tablinks active" name="ShowLog">Show Log</button>
+      <button class="tablinks" name="EditConfig">Edit Config</button>
+      <button class="tablinks" name="OTAUpload">OTA Upload</button>
     </div>
-    </br></br></br>
-    <div id="ShowLog" class="tabcontent" style="display:block"; top:100px">
-      <h2>Monitor & Enter Tuya Commands</h2>
+    <br><br><br>
+    <div id="ShowLog" class="tabcontent" style="display:block">
+      <div class="header">Monitor & Enter Tuya Commands</div>
+      <br>
       <div class="grid-cols1">
-        <svg width="150" height="40">
-          <rect style="rx:5%"/>
-          <text id="clearWSlog" x="50%" y="50%" font-size="25" fill="black">Clear Log</text>
+        <svg class="svgCols1" style="width: calc(var(--buttonSize) * 10); font-size: calc(var(--buttonSize) * 1.5)">  
+          <rect/>
+          <text id="clearWSlog" class="midText">Clear Log</text>
         </svg>
       </div>
-      <br/>
+      <br>
       <input type='text' style="width:90%;" placeholder="Enter command for device and press return" id='txtCmd'/> 
-      <br/>
+      <br>
       <pre id='applog' style="height:50vh;"></pre>
     </div>
     
     <div id="EditConfig" class="tabcontent">
-      <h2>Control</h2>
-      <h3>Press Config button to view or modify settings (changed values are not validated)</h3>
-      <h3>Press Save button to make changes permanent</h3>
+      <br>
+      <div class="header">Control</div>
+      <br>
+      <div class="subheader">Press a button to view or modify settings (changed values are not validated)</div>
+      <div class="subheader">Press Save button to make changes permanent</div>
+      <br>
       <div class="grid-cols5">
         <div>
-          <svg width="90" height="90">
+          <svg class="svgCols5">
             <rect/>
-            <text id="config" x="50%" y="30%" font-size="25" fill="black">Wifi
-            <tspan x="50%" y="70%">Config</tspan></text>
+            <text id="reset" class="upperText">Reboot</text>
+            <text class="lowerText">ESP</text>
           </svg>
         </div>
         <div>
-          <svg width="90" height="90">
+          <svg class="svgCols5">
             <rect/>
-            <text id="save" x="50%" y="50%" font-size="25" fill="black">Save</text>
+            <text id="deldata" class="upperText">Reload</text>
+            <text class="lowerText">/data</text> 
           </svg>
         </div>
         <div>
-          <svg width="90" height="90">
+          <svg class="svgCols5">
             <rect/>
-            <text id="reset" x="50%" y="30%"font-size="25" fill="black">Reboot
-            <tspan x="50%" y="70%">ESP</tspan></text>
+            <text id="clear" class="upperText">Clear</text>
+            <text class="lowerText">NVS</text>
+          </svg>
+        </div>
+        <div>&nbsp;</div>
+        <div>&nbsp;</div>
+        <div>
+          <svg class="svgCols5">
+            <rect/>
+            <text id="wifi" class="upperText">Wifi</text>
+            <text class="lowerText">Config</text>         
           </svg>
         </div>
         <div>
-          <svg width="90" height="90">
+          <svg class="svgCols5">
             <rect/>
-            <text id="deldata" x="50%" y="30%" font-size="25" fill="black">Reload
-            <tspan x="50%" y="70%">Spiffs</tspan></text>
-          </svg>
-        </div>
-        <div>
-          <svg width="90" height="90">
-            <rect/>
-            <text id="clear" x="50%" y="30%" font-size="25" fill="black">Clear
-            <tspan x="50%" y="70%">NVS</tspan></text>
+            <text id="save" class="midText">Save</text>
           </svg>
         </div>
       </div>
-      <div class="configGroup">
-        <p id='configTable'></p>
+      <div>
+        <p class='config-group'></p>
       </div>
     </div>
            
     <div id="OTAUpload" class="tabcontent">
-      <br/><br/>
+      <br><br>
       <form id="upload_form" enctype="multipart/form-data" method="post">
-        <input type="file" name="file1" id="file1" onchange="uploadFile()">
-        <br/><br/>
-        <progress id="progressOta" value="0" max="100" style="width:300px;"></progress>%
-        <h3 id="status"></h3>
+        <input class="local" type="file" name="otafile" id="otafile">
+        <br><br>
+        <progress id="progressOta" value="0" max="100" ></progress>%
+        <div class="subheader" id="status"></div>
         <p id="loaded_n_total"></p>
       </form>
     </div>
+        
+    <div class="alertMsg">
+      <span id="alertText"></span>
+    </div>
     
     <script>
+      document.addEventListener('DOMContentLoaded', function (event) {
+        'use strict'
 
-      /*********** initialisation functions ***********/
-      
-      const baseHost = window.location.origin;
-      const wsServer = "ws://" + document.location.host + ":80/ws";
-      let ws = null;
-      let hbInterval = null;
-      let statusData = {}; // stores all status data as key val pair
-      let cfgGroupNow = -1;
-      const $ = document.querySelector.bind(document);
-      const $$ = document.querySelectorAll.bind(document);
+        /*********** initialisation ***********/
+        
+        const baseHost = document.location.origin;
+        const wsServer = "ws://" + document.location.host + ":80/ws";
+        let refreshInterval = 5000;         
+        let ws = null;
+        let hbTimer = null;
+        let updateData = {}; // receives json for status data as key val pairs
+        let statusData = {}; // stores all status data as key val pair  
+        let cfgGroupNow = -1;
+        let loggingOn = false;
+        const CLASS = 0;
+        const ID = 1;         
+        const $ = document.querySelector.bind(document);
+        const $$ = document.querySelectorAll.bind(document);
+        const baseFontSize = parseInt(window.getComputedStyle($('body')).fontSize); 
 
-      document.addEventListener("DOMContentLoaded", () => {
-        try {
-          initWebSocket();
-          loadStatus();
-        } catch (error) {sendLog("Error: " + error.message);}
-        setListeners();
-      });
+        initialise();
+        
+        function initialise() {
+          try {
+            //addButtons();
+            setListeners();
+            initWebSocket();
+            loadStatus(""); 
+            //if (hbTimer == null) setTimeout(refreshStatus, refreshInterval);
+          } catch (error) {showLog("Error: " + error.message);}
+        }
       
-      /*********** websocket functions ***********/
+        /*********** websocket functions ***********/
+        
+        // define websocket handling
+        function initWebSocket() {
+          loggingOn = true;
+          showLog("Connect to: " + wsServer);
+          ws = new WebSocket(wsServer);
+          ws.onopen = onOpen;
+          ws.onclose = onClose;
+          ws.onmessage = onMessage; 
+          ws.onerror = onError;
+        }
+        
+        // periodically check that connection is still up and get status
+        function heartbeat() {
+          if (!ws) return;
+          if (ws.readyState !== 1) return;
+          sendCmd("H");
+            clearTimeout(hbTimer);
+            hbTimer = setTimeout(heartbeat, refreshInterval);               
+        }
+        
+        // connect to websocket server
+        function onOpen(event) {
+          showLog("Connected");
+          sendCmd("I"); // sync web page with MCU
+          heartbeat();
+        }
       
-      // define websocket handling
-      function initWebSocket() {
-        sendLog("Connect to: " + wsServer);
-        ws = new WebSocket(wsServer);
-        ws.onopen = onOpen;
-        ws.onclose = onClose;
-        ws.onmessage = onMessage; 
-        ws.onerror = onError;       
-      }
+        // process received WS message
+        function onMessage(messageEvent) {
+          if (messageEvent.data.startsWith("{")) {
+            // json data
+            updateData = JSON.parse(messageEvent.data);
+            let filter = updateData.cfgGroup;
+            delete updateData.cfgGroup;
+            if (filter == "-1")  updateStatus(); // status update
+            else buildTable(updateData, filter); // format received config json into html table
+          } else showLog(messageEvent.data, false);
+        }
+        
+        function onError(event) {
+          showLog("WS Error: " + event.code);
+        }
+        
+        function onClose(event) {
+         showLog("Disconnected: " + event.code + ' - ' + event.reason);
+          loggingOn = false;
+          ws = null;
+          // event.codes:
+          //   1006 if server not available, or another web page is already open
+          //   1005 if closed from app
+          if (event.code == 1006) {} //alert("Closed websocket as a newer connection was made, refresh browser page");
+          else if (event.code != 1005) initWebSocket(); // retry if any other reason
+        }
       
-      // periodically check that connection is still up
-      function heartbeat() {
-        if (!ws) return;
-        if (ws.readyState !== 1) return;
-        sendCmd("H");
-        clearTimeout(hbInterval);
-        hbInterval = setTimeout(heartbeat, 30000);
-      }
-      
-      // connect to websocket server
-      function onOpen(event) {
-        sendLog("Connected");
-        heartbeat();
-      }
-      
-      // process received WS message
-      function onMessage(messageEvent) {
-        if (messageEvent.data.startsWith("{")) {
-          // json data
-          let updateData = JSON.parse(messageEvent.data);
-          let filter = updateData.cfgGroup;
-          delete updateData.cfgGroup;
-          if (filter == "-1") {
-            // status update
-            Object.entries(updateData).forEach(([key, value]) => {
-              statusData[key] = value;
-              // replace each existing value with new value, using key name to match html tag id
-              if ($('text#'+key)) $('text#'+key).textContent = value;
-              else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
-              processStatus(key, false);
-            });
-          } else {
-            // format received config json into html table
-            buildTable(updateData, filter);
-          }
-        } else addLogLine(messageEvent.data);
-      }
-      
-      function onError(event) {
-        sendLog("WS Error: " + event.code);
-      }
-      
-      function onClose(event) {
-        sendLog("Disconnected: " + event.code + ' - ' + event.reason);
-        // event.code is usually 1006 if server not available, or another web page is already open
-        if (event.code == 1006) alert("Closed websocket as a newer connection was made");
-        else initWebSocket(); // retry if any other reason
-      }
-      
-      /*********** page layout functions ***********/
+        async function closeWS() {
+          ws.send('K');
+          await sleep(500);
+          if (ws != null) ws.close();
+        }
+        
+        /*********** page layout functions ***********/
     
-      function openTab(evt, tabName) {
-        // control tab viewing
-        $$('.tabcontent').forEach(el => {el.style.display = "none";});
-        $('#' + tabName).style.display = "block";
-        $$('.tablinks').forEach(el => {el.classList.remove("active");});
-        evt.classList.add("active");
-      }
+        function openTab(e) {
+          // control tab viewing
+          $$('.tabcontent').forEach(el => {el.style.display = "none";});
+          $('#' + e.name).style.display = "inherit";
+          $$('.tablinks').forEach(el => {el.classList.remove("active");});
+          e.classList.add("active");
+          try {
+            if (e.name == 'mainPage') show($('#main'));
+            else hide($('#main'));
+          } catch {}                        
+        }
 
-      function accordian(accId) {
-        // accordian buttons to show / hide elements
-        let panel = $('#' + accId);
-        if (panel.style.display === "block") panel.style.display = "none";
-        else panel.style.display = "block";
-      }
-      
+        function accordian(accId) {
+          // accordian buttons to show / hide elements
+          let panel = $('#' + accId);
+          if (panel.style.display === "inherit") panel.style.display = "none";
+          else panel.style.display = "inherit";
+        }
+
+                                                             function rangeSlider(el, isPos = true, statusVal = null) {
+          // update range slider marker position and value 
+          const rangeVal = el.parentElement.children.rangeVal;
+          if (statusVal != null) rangeVal.innerHTML = statusVal;
+          const currVal = isPos ? parseFloat(el.value) : parseFloat(rangeVal.innerHTML);
+          const minval = parseFloat(el.min);
+          const maxval = parseFloat(el.max);
+          const decPlaces = (el.step > 0 && el.step < 1) || el.step == 'any' ? 1 : 0;
+          if (el.classList.contains('logslider')) {
+            // range value is logarithmic
+            const minlog = Math.log(minval);
+            const maxlog = Math.log(maxval) ;
+            const scale = (maxlog - minlog) / (maxval - minval);
+            // if isPos then get value from slider positional change by user, else set slider position from initial value.
+            if (isPos) rangeVal.innerHTML = Math.exp((currVal - minval) * scale + minlog).toFixed(decPlaces);
+            else el.value = minval + ((currVal == 0 ? 0 : Math.log(currVal)) - minlog) / scale; 
+          } else rangeVal.innerHTML = parseFloat(el.value).toFixed(decPlaces);
+          
+          // position for range marker
+          const rangeFontSize = parseInt(window.getComputedStyle($('input[type=range]')).fontSize); 
+          let position = (el.clientWidth - rangeFontSize) * (el.value - minval) / (maxval - minval); 
+          position += el.offsetLeft + (rangeFontSize / 2);
+          rangeVal.style.left = 'calc('+position+'px)';
+        }
+        
+        let observer = new IntersectionObserver ( function(entries) {
+          // recalc each range slider that becomes visible
+            entries.forEach(el => { if (el.isIntersecting === true) rangeSlider(el['target']); });
+          }, { threshold: [0] }
+        );
+        $$('input[type=range]').forEach(el => { observer.observe(el); });
+        
+        function addButtons() {
+          // add commmon buttons to relevant sections
+          $$('.addButtons').forEach(el => {
+            el.innerHTML = '<section id="buttons">'
+              +'<button id="save" style="float:right;" value="1">Save Settings</button>'
+              +'<button id="reset" style="float:right;" value="1">Reboot ESP</button>'
+            +'</section><br>'
+          });
+        }
+        
+        function addRangeData() {
+          // add labelling for rangle sliders
+          $$('input[type="range"]').forEach(el => {
+            if (!isDefined(el.parentElement.children.rangeMin)) el.insertAdjacentHTML("beforebegin", '<div name="rangeMin"/>'+el.min+'</div>');
+            el.insertAdjacentHTML("afterend", '<div name="rangeVal">'+el.value+'</div>');
+            if (!isDefined(el.parentElement.children.rangeMax)) el.insertAdjacentHTML("afterend", '<div name="rangeMax"/>'+el.max+'</div>');
+            rangeSlider(el, false);
+          });
+        } 
+        
        /*********** data processing functions ***********/
       
-      async function loadStatus() {
-        // request and load current status
-        const response = await fetch(baseHost+'/status');
-        if (response.ok) {
-          statusData = await response.json();
-          Object.entries(statusData).forEach(([key, value]) => {
-            // replace each existing value with new value, using key name to match html tag id
-            if ($('text#'+key)) $('text#'+key).textContent = value;
-            else if ($('input[id="'+key+'"]')) $('input[id="'+key+'"]').value = value;
-          });
-          Object.keys(statusData).forEach(key => processStatus(key, false));
-          await sleep(1000);
-        } else console.log(response.status); 
-      }
+        async function loadStatus(specifier) {
+          // request and load current status from app
+          const response = await fetch(baseHost+'/status'+specifier);
+          if (response.ok) {
+            updateData = await response.json();
+            updateStatus();
+            await sleep(1000);
+          } else console.log(response.status); 
+        }
       
-      function sendUpdates(doAction) {    
-        // get each required update element and obtain id/name and value into array to send as json
-        let jarray = {};
-        jarray["action"] = doAction;
-        $$('.update-action').forEach(el => {
-          if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
-        });
-        // send as json to server
-        fetch(baseHost + '/update', {
-          method: 'POST', 
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(jarray),
-        });
-      }
-      
-      /*********** utility functions ***********/
-      
-      // add received line to log element
-      function addLogLine(text) {
-        let log = document.getElementById('applog');
-        let new_node = document.createTextNode(text + "\n");
-        log.append(new_node);
-        // auto scroll new entry unless scroll bar is not at bottom
-        const bottom = 40; // double font size
-        const pos = Math.abs(log.scrollHeight - log.clientHeight - log.scrollTop);
-        if (pos < bottom) log.scrollTop = log.scrollHeight;
-      }
-      
-      function debounce(func, timeout = 500){
-        // debounce rapid clicks to prevent unnecessary fetches
-        let timer;
-        return (...args) => {
-          clearTimeout(timer);
-          timer = setTimeout(() => { func.apply(this, args); }, timeout);
-        };
-      }
-      
-      const debounceSendControl = debounce((query) => fetch(baseHost + encodeURI('/control?' + query)));
-      
-      function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-      }
-      
-      /*********** command processing ***********/
-      
-      function setListeners() {
-        // add event listener for change events
-        setAppListeners();
-        // add event listener for click events
-        document.addEventListener("click", function (event) {
-          // svg rect elements, use id of its following text node
-          if (event.target.nodeName == 'rect') processStatus(event.target.nextElementSibling.id, true);
-          // tab buttons, use button text as tab id
-          if (event.target.classList.contains('tablinks')) openTab(event.target, event.target.innerHTML.replaceAll(' ', ''));
-        });
-        // input fields of given class
-        document.addEventListener("change", function (event) {
-          // config input fields 
-          if (event.target.classList.contains('configItem')) { 
-           fetch(baseHost + encodeURI('/control?' + event.target.name + '=' + event.target.value));
-          }
-        });
-        // event listener to close web socket immediately on leaving page
-        window.addEventListener('beforeunload', function (event) {
-          if (ws) ws.terminate();
-        });
-      }
-      
-      function sendWsCmd() {
-        // send user command to websocket server
-        let txt = $('#txtCmd');
-        let line = txt.value;
-        if (line != "" && ws !== undefined) {
-          sendCmd(line);
-          txt.value = "";
-          txt.focus();
-        } else sendLog("No command or no connection");
-      }
-       
-      function sendCmd(reqStr) {
-        ws.send(reqStr);
-        sendLog("Cmd: " + reqStr);
-      }
-      
-      function sendLog(reqStr) {
-        let date = new Date();
-        addLogLine("[" + date.toLocaleTimeString() + " Web] " + reqStr);
-      }
-      
-      function sendWsUpdates(doAction) {    
-        // get each required update element and obtain id/name and value into array to send as json 
-        let jarray = {};
-        jarray["action"] = doAction;
-        $$('.update-action').forEach(el => {
-          if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
-        });
-        sendCmd('U' + JSON.stringify(jarray));
-      }
-      
-      function processStatus(key, fromUser) {
-        // called for each updated key
-        if (key == "config") getConfig("0");
-        else if (key == "save") debounceSendControl(key + '=1');
-        else if (key == "reset") debounceSendControl(key + '=1');
-        else if (key == "deldata") debounceSendControl(key + '=1');
-        else if (key == "clear") debounceSendControl(key + '=1');
-        else if (key == "clearWSlog") $('#applog').innerHTML = "";
-        else processAppStatus(key, fromUser);
-      }
-      
-      /*********** config functions ***********/
-      
-      async function getConfig(cfgGroup) {
-        // request config json for selected group
-        const response = await fetch('/status?123456789' + cfgGroup);
-        if (response.ok) {
-          const configData = await response.json();
-          // format received json into html table
-          buildTable(configData, cfgGroup);
-        } else console.log(response.status); 
-      }
-      
-      function buildTable(configData, cfgGroup) {
-        // dynamically build table of editable settings
-        const divShowData = document.getElementById('configTable');
-        divShowData.innerHTML = "";
-        if (cfgGroupNow != cfgGroup) {
-          cfgGroupNow = cfgGroup;
-          const table = document.createElement("table"); 
-          // Create table header row from heading names
-          const colHeaders = ['Setting Name', 'Setting Value']; 
-          let tr = table.insertRow(-1); 
-          for (let i = 0; i < colHeaders.length; i++) {
-            let th = document.createElement("th");    
-            th.innerHTML = colHeaders[i];
-            tr.appendChild(th);
-          }
-
-          // add each setting as a row containing setting name and setting value
-          let newRow = 1;
-          Object.keys(configData).forEach( key => {
-            if (key != "cfgGroup") { // skip over this entry
-              if (newRow) tr = table.insertRow(-1);
-              let tabCell = tr.insertCell(-1);
-              if (newRow) {
-                tabCell.innerHTML = configData[key]; // name of setting
-                newRow = 0;
-              } else {
-                // input field for value of setting
-                tabCell.innerHTML = '<input type="text" class="configItem" name="' + key + '" value="' + configData[key] +'">'; 
-                newRow = 1;
-              }
+        function refreshStatus() {
+          // refresh status at required interval
+          clearTimeout(hbTimer);
+          //loadStatus("?q");
+          hbTimer = setTimeout(refreshStatus, refreshInterval);
+        }
+        
+        function updateStatus() {
+          // replace each existing value with new received value, using key name to match html tag id
+          Object.entries(updateData).forEach(([key, value]) => {
+            let elt = $('text#'+key); // svg button
+            let eld = $('div#'+key); // display text
+            let eli = $('#'+key); // input field
+            if (elt) elt.textContent = value; 
+            else if (eld) {if (eld.classList.contains('displayonly')) eld.innerHTML = value;} // display text 
+            else if (eli != null) { // input fields
+              if (eli.type === 'checkbox') eli.checked = !!Number(value);
+              else if (eli.type === 'range') rangeSlider(eli, false, value);
+              else if (eli.type === 'option') eli.selected = true;
+              else eli.value = value; 
             }
-          })
-          // add the newly created table at placeholder
-          divShowData.appendChild(table);
-        } else cfgGroupNow = -1;
-      }
-
-       /*********** OTA functions ***********/
-       
-      async function uploadFile() {
-        // notify server to start ota task
-        const response = await fetch('/control?startOTA=1');
-        if (response.ok) {
-          // submit file for uploading
-          let file = $("#file1").files[0];
-          let formdata = new FormData();
-          formdata.append("file1", file);
-          let ajax = new XMLHttpRequest();
-          ajax.upload.addEventListener("progress", progressHandler, false);
-          ajax.addEventListener("load", completeHandler, false);
-          ajax.addEventListener("error", errorHandler, false);
-          ajax.addEventListener("abort", abortHandler, false);
-          ajax.open("POST", baseHost + ':82/upload');
-          ajax.send(formdata);
-        } else console.log(response.status); 
-      }
-
-      function progressHandler(event) {
-        $("#loaded_n_total").innerHTML = "Uploaded " + event.loaded + " of " + event.total + " bytes";
-        let percent = (event.loaded / event.total) * 100;
-        $("#progressOta").value = Math.round(percent);
-        $("#status").innerHTML = Math.round(percent) + "% transferred";
-        if (event.loaded  == event.total) $("#status").innerHTML = 'Uploaded, wait for completion result';
-      }
-
-      function completeHandler(event) {
-        $("#status").innerHTML = event.target.responseText;
-        $("#progressOta").value = 0;
-      }
-
-      function errorHandler(event) {
-        $("#status").innerHTML = "Upload Failed";
-        $("#progressOta").value = 0;
-      }
-
-      function abortHandler(event) {
-        $("#status").innerHTML = "Upload Aborted";
-        $("#progressOta").value = 0;
-      }
+            statusData[key] = value;
+            processStatus(ID, key, value, false);
+          });
+        }
+        
+        async function sendUpdates(doAction) {    
+          // send bulk updates to app as json 
+          statusData['action'] = doAction;
+          const response = await fetch(baseHost + '/update', {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(statusData),
+          });
+          if (!response.ok) console.log(response.status);
+        }
       
-      /****************** app specific ********************/
+        /*********** utility functions ***********/
+        
+        function debounce(func, timeout = 500){
+          // debounce rapid clicks to prevent unnecessary fetches
+          let timer;
+          return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { func.apply(this, args); }, timeout);
+          };
+        }
+        
+        const debounceSendControl = debounce((key, value) => sendControl(key, value));
+        
+        function sleep(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms));
+        }
       
-      function processAppStatus(key, fromUser) {
-      }
+        function hide(el) {
+          el.classList.add('hidden')
+          el.style.display = "none";
+        }
+        
+        function show(el) {
+          el.classList.remove('hidden')
+          el.style.display = "";
+        }
+
+        function disable(el) {
+          el.classList.add('disabled');
+          el.disabled = true;
+        }
+
+        function enable(el) {
+          el.classList.remove('disabled');
+          el.disabled = false;
+        }
+        
+        function isActive(key) {
+          return key.classList.contains('active') ? true : false;
+        }
+        
+        function isDefined(variable) {
+          return (typeof variable === 'undefined' || variable === null ) ? false : true;
+        }
+        
+        async function showAlert(value) {
+          $('#alertText').innerHTML = value;
+          await sleep(5000);
+          $('#alertText').innerHTML = "";
+        }
+        
+        function dbg(msg) {
+          console.log('***** '+msg);
+        }
+
+        /*********** command processing ***********/
       
-      function setAppListeners() {
-        // event listener for user command entered on Log tab
-        document.addEventListener("keydown", function (event) {
-          if (event.target.id == 'txtCmd') {
-            let keyPress = event.keyCode || event.which;
-            if (keyPress == 13) sendWsCmd();
+         function setListeners() {
+        
+         // click events
+         document.addEventListener("click", function (event) {
+            const e = event.target;
+            // svg rect elements, use id of its following text node
+            if (e.nodeName == 'rect') processStatus(ID, e.nextElementSibling.id, 1);
+            // tab buttons, use name as target id 
+            else if (e.classList.contains('tablinks')) openTab(e);
+            // other buttons
+            else if (e.tagName == 'BUTTON') processStatus(ID, e.id, e.value);
+            // navigation and presentation icons
+            else if (e.tagName == 'NAV' || e.tagName == 'DIV') processStatus(CLASS, e.classList.value, e.id);
+            else if (e.nodeName == 'INPUT' || e.nodeName == 'SELECT') {/*ignore*/}
+          });
+          
+          // change events
+          document.addEventListener("change", function (event) {
+            const e = event.target;
+            const value = e.value.trim();
+            const et = event.target.type;
+            // input fields of given class 
+            if (e.nodeName == 'INPUT') {  
+              if (e.type === 'checkbox') processStatus(ID, e.id, e.checked ? 1 : 0);
+              else if (et === 'button' || et === 'file') processStatus(ID, e.id, 1);
+              else if (et === 'radio') { if (e.checked) processStatus(ID, e.name, value); } 
+              else if (e.hasAttribute('id')) processStatus(ID, e.id, value);
+            }
+            else if (e.tagName == 'SELECT') processStatus(ID, e.id, value);
+          });
+
+          // input events
+          document.addEventListener("input", function (event) {
+            if (event.target.type === 'range') rangeSlider(event.target);
+          });
+          
+          // user command entered on Log tab
+          document.addEventListener("keydown", function (event) {
+            if (event.target.id == 'txtCmd') {
+              let keyPress = event.keyCode || event.which;
+              if (keyPress == 13) sendWsCmd();
+            }
+          });
+          
+          // recalc range marker positions 
+          window.addEventListener('resize', function (event) {
+            $$('input[type=range]').forEach(el => { rangeSlider(el); });
+          });
+          
+          // close web socket on leaving page
+          window.addEventListener('beforeunload', function (event) {
+            if (ws) closeWS();
+          });  
+          
+        }
+      
+        function sendWsCmd() {
+          // send user command to websocket server
+          let txt = $('#txtCmd');
+          let line = txt.value;
+          if (line != "" && ws !== undefined) {
+            sendCmd(line);
+            txt.value = "";
+            txt.focus();
+          } else showLog("No command or no connection");
+        }
+        
+        function sendCmd(reqStr) {
+          ws.send(reqStr);
+          showLog("Cmd: " + reqStr);
+        }
+        
+        function showLog(reqStr, fromUser = true) {
+          if (loggingOn) {
+            let date = new Date();
+            // add timestamp to received text if generated by browser
+            let logText = fromUser ? "[" + date.toLocaleTimeString() + " Web] " : "";
+            logText += reqStr + "\n";
+            // append to log display 
+            let log = $('#applog');
+            let new_node = document.createTextNode(logText);
+            log.append(new_node);
+            // auto scroll new entry unless scroll bar is not at bottom
+            const bottom = 2 * baseFontSize;// 2 lines
+            const pos = Math.abs(log.scrollHeight - log.clientHeight - log.scrollTop);
+            if (pos < bottom) log.scrollTop = log.scrollHeight;
           }
-        });
-      }                                                     
+        }
+        
+        function sendWsUpdates(doAction) {    
+          // get each required update element and obtain id/name and value into array to send as json 
+          let jarray = {};
+          jarray["action"] = doAction;
+          $$('.update-action').forEach(el => {
+            if (el.nodeName == "INPUT") jarray[el.getAttribute('id')] = el.value.trim();
+          });
+          sendCmd('U' + JSON.stringify(jarray));
+        }
+
+        async function sendControl(key, value) {
+          // send only  
+          if (value != null) {
+            const response = await fetch(encodeURI(baseHost + "/control?" + key + "=" + value));
+            if (!response.ok) console.log(response.status);
+          }
+        }
+        
+        async function sendControlResp(key, value) {
+          // send and apply response
+          const response = await fetch(encodeURI(baseHost + "/control?" + key + "=" + value));
+          if (response.ok) {
+            updateData = await response.json();
+            updateStatus();
+          } else console.log(response.status); 
+        }
       
+        /*********** config functions ***********/
+
+        async function getConfig(cfgGroup) {
+          // request config json for selected group
+          const response = await fetch('/status?123456789' + cfgGroup);
+          if (response.ok) {
+            const configData = await response.json();
+            // format received json into html table
+            buildTable(configData, cfgGroup);
+          } else console.log(response.status); 
+        }
+      
+        function buildTable(configData, cfgGroup) {
+          // dynamically build table of editable settings
+          const divShowData = $('.config-group');
+          divShowData.innerHTML = "";
+          if (cfgGroupNow != cfgGroup) {
+            cfgGroupNow = cfgGroup;
+            const table = document.createElement("table"); 
+            // Create table header row from heading names
+            const colHeaders = ['Setting Name', 'Setting Value']; 
+            let tr = table.insertRow(-1); 
+            for (let i = 0; i < colHeaders.length; i++) {
+              let th = document.createElement("th");    
+              th.innerHTML = colHeaders[i];
+              tr.appendChild(th);
+            }
+
+           // add each setting as a row containing setting label and setting value
+            let nextPair = 3;
+            let saveKey, saveVal;
+            Object.entries(configData).forEach(([key, value]) => {
+              if (key != "cfgGroup") { // skip over this entry 
+                if (nextPair == 3) {
+                  // new row
+                  tr = table.insertRow(-1);
+                  nextPair = 0;
+                }
+                if (nextPair == 0) {
+                  // save key and value
+                  saveKey = key;
+                  saveVal = value;
+                  nextPair = 1;
+                } else if (nextPair == 1) {
+                  // insert label for setting
+                  tr.insertCell(-1).innerHTML = value; 
+                  nextPair = 2;
+                } else {
+                  // get input field type and build html
+                  let inputHtml;
+                  switch (value.charAt(0)) {
+                    case 'T':
+                      inputHtml = '<input type="text" class="configItem" id="' + saveKey + '" value="'+ saveVal +'" >';
+                    break;
+                    case 'N':
+                      inputHtml = '<input type="number" class="configItem" id="' + saveKey + '" value="'+ saveVal +'" >';
+                    break;
+                    case 'S': 
+                      // build drop down select
+                      inputHtml = '<select id="' + saveKey + '" class="selectField">';
+                      value.substring(2).split(":").forEach(opt => {
+                        inputHtml += '<option value="' + opt + '" ' + (saveVal == opt ? 'selected="selected"' : '') + '>' + opt + '</option>';
+                      });
+                      inputHtml += '</select>';
+                    break;
+                    case 'C':
+                      // format checkbox as slider
+                      inputHtml = '<div class="switch"><input type="checkbox" class="configItem" id="' + saveKey;
+                      inputHtml += '" value="'+ saveVal +'"' + (saveVal == 1 ? ' checked' : '') + '>';
+                      inputHtml += '<label class="slider" for="' + saveKey + '"></label></div>';
+                    break;
+                    case 'D': // display only
+                      inputHtml = '<input type="text" class="configItem" id="' + saveKey + '" value="'+ saveVal +'" readonly>';
+                    break;
+                    case 'R': // R:min:max:step
+                      // format number as range slider 
+                      const range = value.substring(2).split(":");
+                      inputHtml = '<div class="input-group">';
+                      inputHtml += '<input type="range" id="' + saveKey + '" min="' + range[0] + '" max="' + range[1];
+                      inputHtml += '" step="' + range[2] + '" value="' + saveVal + '"><div name="rangeVal">' + saveVal + '</div></div>';
+                    break;
+                    default:
+                      console.log("Unhandled config input type " + value);
+                    break;
+                  }
+                  tr.insertCell(-1).innerHTML = inputHtml;
+                  nextPair = 3;
+                }
+              }
+            })
+            // add the newly created table at placeholder
+            divShowData.appendChild(table);
+          } else cfgGroupNow = -1;
+        }                                                   
+
+        /*********** OTA functions ***********/
+         
+        async function otaUploadFile() {
+          // notify server to start ota task
+          const response = await fetch('/control?startOTA=1');
+          if (response.ok) {
+            // submit file for uploading
+            let file = $("#otafile").files[0];
+            let formdata = new FormData();
+            formdata.append("otafile", file);
+            let ajax = new XMLHttpRequest();
+            ajax.upload.addEventListener("progress", progressHandler, false);
+            ajax.addEventListener("load", completeHandler, false);
+            ajax.addEventListener("error", errorHandler, false);
+            ajax.addEventListener("abort", abortHandler, false);
+            ajax.open("POST", baseHost + ':82/upload');
+            ajax.send(formdata);
+          } else console.log(response.status); 
+        }
+
+        function progressHandler(event) {
+          $("#loaded_n_total").innerHTML = "Uploaded " + event.loaded + " of " + event.total + " bytes";
+          let percent = (event.loaded / event.total) * 100;
+          $("#progressOta").value = Math.round(percent);
+          $("#status").innerHTML = Math.round(percent) + "% transferred";
+          if (event.loaded  == event.total) $("#status").innerHTML = 'Uploaded, wait for completion result';
+        }
+
+        function completeHandler(event) {
+          $("#status").innerHTML = event.target.responseText;
+          $("#progressOta").value = 0;
+        }
+
+        function errorHandler(event) {
+          $("#status").innerHTML = "Upload Failed";
+          $("#progressOta").value = 0;
+        }
+
+        function abortHandler(event) {
+          $("#status").innerHTML = "Upload Aborted";
+          $("#progressOta").value = 0;
+        }
+        
+        /************* App specific ***************/
+
+        function processStatus(dest, key, value, fromUser = true) {
+          // process change to status value
+          if (dest == ID) {
+            // operation based on ID
+            if (key == "wifi") getConfig("0");
+            else if (key == "hostName") document.title = value;
+            else if (key == "otafile") otaUploadFile();
+            else if (key == "alertMsg") showAlert(value);
+            else if (key == "clearWSlog") $('#applog').innerHTML = "";
+            else if (fromUser) sendControl(key, value); // remaining changes are passed thru to app
+          }
+          else if (dest == CLASS) {}
+        }
+           
+      });           
     </script>
   </body>
 </html>
