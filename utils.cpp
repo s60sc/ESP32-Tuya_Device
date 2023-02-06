@@ -6,13 +6,17 @@
 // - base64 encoding
 // - device sleep
 //
-// s60sc 2021, some functions based on code contributed by gemi254
+// s60sc 2021, 2023
+// some functions based on code contributed by gemi254
 
-#include "globals.h"
+#include "appGlobals.h"
 
 bool dbgVerbose = false;
 bool timeSynchronized = false;
 bool monitorOpen = true;
+bool dataFilesChecked = false;
+// allow any startup failures to be reported via browser for remote devices
+char startupFailure[50] = {0};
 
 /************************** Wifi **************************/
 
@@ -28,123 +32,174 @@ char ST_ns1[16] = ""; // DNS Server, can be router IP (needed for SNTP)
 char ST_ns2[16] = ""; // alternative DNS Server, can be blank
 
 // Access point Config Portal SSID and Pass
-String AP_SSID = String(APP_NAME) + "_" + String((uint32_t)ESP.getEfuseMac(),HEX); 
-char   AP_Pass[MAX_PWD_LEN] = "";
-char   AP_ip[16]  = ""; //Leave blank to use 192.168.4.1
-char   AP_sn[16]  = "";
-char   AP_gw[16]  = "";
+char AP_SSID[32] = "";
+char AP_Pass[MAX_PWD_LEN] = "";
+char AP_ip[16]  = ""; //Leave blank to use 192.168.4.1
+char AP_sn[16]  = "";
+char AP_gw[16]  = "";
 
 // basic HTTP Authentication access to web page
 char Auth_Name[16] = ""; 
 char Auth_Pass[MAX_PWD_LEN] = "";
 
 int responseTimeoutSecs = 10; // time to wait for FTP or SMTP response
-bool allowAP = true;  // set to true to allow AP to startup if cannot reconnect to STA (router)
+bool allowAP = true;  // set to true to allow AP to startup if cannot connect to STA (router)
 int wifiTimeoutSecs = 30; // how often to check wifi status
-
+static bool APstarted = false;
 static esp_ping_handle_t pingHandle = NULL;
 static void startPing();
 
-static void setupMndsHost() {  //Mdns services   
-  if (MDNS.begin(hostName)) {
-    // Add service to MDNS-SD
+static void setupMdnsHost() {  
+  // set up MDNS service 
+  char mdnsName[15]; // max mdns host name length
+  snprintf(mdnsName, 15, hostName);
+  if (MDNS.begin(mdnsName)) {
+    // Add service to MDNS
     MDNS.addService("http", "tcp", 80);
-    MDNS.addService("ws", "udp", 81);
+    MDNS.addService("ws", "udp", 83);
     // MDNS.addService("ftp", "tcp", 21);    
-    LOG_INF("mDNS service: http://%s.local", hostName);
-  } else {LOG_ERR("mDNS host name: %s Failed", hostName);}
+    LOG_INF("mDNS service: http://%s.local", mdnsName);
+  } else LOG_ERR("mDNS host: %s Failed", mdnsName);
+  debugMemory("setupMdnsHost");
+}
+
+const char* getEncType(int ssidIndex) {
+  switch (WiFi.encryptionType(ssidIndex)) {
+    case (WIFI_AUTH_OPEN):
+      return "Open";
+    case (WIFI_AUTH_WEP):
+      return "WEP";
+    case (WIFI_AUTH_WPA_PSK):
+      return "WPA_PSK";
+    case (WIFI_AUTH_WPA2_PSK):
+      return "WPA2_PSK";
+    case (WIFI_AUTH_WPA_WPA2_PSK):
+      return "WPA_WPA2_PSK";
+    case (WIFI_AUTH_WPA2_ENTERPRISE):
+      return "WPA2_ENTERPRISE";
+    case (WIFI_AUTH_MAX):
+      return "AUTH_MAX";
+    default:
+      return "Not listed";
+  }
+  return "n/a";
+}
+
+static void onWiFiEvent(WiFiEvent_t event) {
+  // callback to report on wifi events
+  if (event == ARDUINO_EVENT_WIFI_READY);
+  else if (event == ARDUINO_EVENT_WIFI_SCAN_DONE);  
+  else if (event == ARDUINO_EVENT_WIFI_STA_START) LOG_INF("Wifi Station started, connecting to: %s", ST_SSID);
+  else if (event == ARDUINO_EVENT_WIFI_STA_STOP) LOG_INF("Wifi Station stopped %s", ST_SSID);
+  else if (event == ARDUINO_EVENT_WIFI_AP_START) {
+    APstarted = true;
+    LOG_INF("Wifi AP SSID: %s started, use 'http://%s' to connect", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+  }
+  else if (event == ARDUINO_EVENT_WIFI_AP_STOP) {
+    LOG_INF("Wifi AP stopped: %s", WiFi.softAPSSID().c_str());
+    APstarted = false;
+  }
+  else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) LOG_INF("Wifi Station IP, use 'http://%s' to connect", WiFi.localIP().toString().c_str()); 
+  else if (event == ARDUINO_EVENT_WIFI_STA_LOST_IP) LOG_INF("Wifi Station lost IP");
+  else if (event == ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
+  else if (event == ARDUINO_EVENT_WIFI_STA_CONNECTED) LOG_INF("WiFi Station connection to %s, using hostname: %s", ST_SSID, hostName);
+  else if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) LOG_INF("WiFi Station disconnected");
+  else if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED) LOG_INF("WiFi AP client connection");
+  else if (event == ARDUINO_EVENT_WIFI_AP_STADISCONNECTED) LOG_INF("WiFi AP client disconnection");
+  else LOG_WRN("WiFi Unhandled event %d", event);
 }
 
 static bool setWifiAP() {
-  // Set access point
-  WiFi.mode(WIFI_AP);
-  //set static ip
-  if (strlen(AP_ip)>1) {
-    LOG_DBG("Setting ap static ip :%s, %s, %s", AP_ip, AP_gw, AP_sn);  
-    IPAddress _ip,_gw,_sn,_ns1,_ns2;
-    _ip.fromString(AP_ip);
-    _gw.fromString(AP_gw);
-    _sn.fromString(AP_sn);
-    //set static ip
-    WiFi.softAPConfig(_ip, _gw, _sn);
-  } 
-  WiFi.softAP(AP_SSID.c_str(), AP_Pass);
-  LOG_INF("Created Access Point with SSID: %s", AP_SSID.c_str()); 
-  LOG_INF("Use 'http://%s' to connect", WiFi.softAPIP().toString().c_str()); 
-  setupMndsHost();
-  return true;
-}
-
-bool startWifi() {
-  WiFi.disconnect();
-  WiFi.persistent(false); // prevent the flash storage WiFi credentials
-  WiFi.setAutoReconnect(false); //Set whether module will attempt to reconnect to an access point in case it is disconnected
-  WiFi.setAutoConnect(false);
-  LOG_INF("Setting wifi hostname: %s", hostName);
-  WiFi.setHostname(hostName);
-  if (strlen(ST_SSID) > 0) { 
-    LOG_INF("Got stored router credentials. Connecting to: %s", ST_SSID);
-    if (strlen(ST_ip) > 1) {
-      LOG_INF("Set config static ip: %s, %s, %s, %s", ST_ip, ST_gw, ST_sn, ST_ns1);
-      IPAddress _ip, _gw, _sn, _ns1, _ns2;
-      if (!_ip.fromString(ST_ip)) LOG_ERR("Failed to parse %s", ST_ip);
-      _ip.fromString(ST_ip);
-      _gw.fromString(ST_gw);
-      _sn.fromString(ST_sn);
-      _ns1.fromString(ST_ns1);
-      _ns2.fromString(ST_ns2);
+  if (!APstarted) {
+    // Set access point with static ip if provided
+    WiFi.softAPdisconnect(false); // kill rogue connections on startup
+    if (strlen(AP_ip) > 1) {
+      LOG_INF("Set AP static IP :%s, %s, %s", AP_ip, AP_gw, AP_sn);  
+      IPAddress _ip, _gw, _sn, _ns1 ,_ns2;
+      _ip.fromString(AP_ip);
+      _gw.fromString(AP_gw);
+      _sn.fromString(AP_sn);
       // set static ip
-      WiFi.config(_ip, _gw, _sn, _ns1); // need DNS for SNTP
-    } else {LOG_INF("Getting ip from dhcp ...");}
-    
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ST_SSID, ST_Pass);
-    uint32_t startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < wifiTimeoutSecs * 1000)  {
-      //Stop waiting on failure.. Will reconnect later by keep alive
-      if (WiFi.status() == WL_CONNECT_FAILED){
-        LOG_ERR("Connect FAILED to: %s. ", ST_SSID);
-        startPing();      
-        return false;
-      }
-      Serial.print(".");
-      delay(500);
-      Serial.flush();
-    }
-    if (WiFi.status() == WL_CONNECTED) {
-      startPing();
-      LOG_INF("Use 'http://%s' to connect", WiFi.localIP().toString().c_str()); 
-    } else {
-      if (allowAP) {
-        LOG_INF("Unable to connect to router, start Access Point");
-        // Start AP config portal
-        return setWifiAP();
-      } 
-      return false;
-    }
-  } else {
-    // Start AP config portal
-    LOG_INF("No stored Credentials. Starting Access point");
-    return setWifiAP();
+      WiFi.softAPConfig(_ip, _gw, _sn);
+    } 
+    WiFi.softAP(AP_SSID, AP_Pass);
   }
   return true;
 }
 
+static bool setWifiSTA() {
+  // set station with static ip if provided
+  WiFi.disconnect(false);
+  if (strlen(ST_SSID)) { 
+    if (strlen(ST_ip) > 1) {
+      IPAddress _ip, _gw, _sn, _ns1, _ns2;
+      if (!_ip.fromString(ST_ip)) LOG_ERR("Failed to parse IP: %s", ST_ip);
+      else {
+        _ip.fromString(ST_ip);
+        _gw.fromString(ST_gw);
+        _sn.fromString(ST_sn);
+        _ns1.fromString(ST_ns1);
+        _ns2.fromString(ST_ns2);
+        // set static ip
+        WiFi.config(_ip, _gw, _sn, _ns1); // need DNS for SNTP
+        LOG_INF("Wifi Station set static IP");
+      } 
+    } else LOG_INF("Wifi Station IP from DHCP");
+    WiFi.begin(ST_SSID, ST_Pass);
+    return true;
+  } else LOG_WRN("No Station SSID provided, use AP");
+  return false;
+}
+
+bool startWifi(bool firstcall) {
+  // start wifi station (and wifi AP if allowed or station not defined)
+  if (firstcall) {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.persistent(false); // prevent the flash storage WiFi credentials
+    WiFi.setAutoReconnect(false); // Set whether module will attempt to reconnect to an access point in case it is disconnected
+    WiFi.onEvent(onWiFiEvent);
+    WiFi.setHostname(hostName);
+  }
+  bool station = setWifiSTA();
+  debugMemory("setWifiSTA");
+  if (!station || allowAP) setWifiAP(); // AP allowed if no Station SSID eg on first time use
+  debugMemory("setWifiAP");
+  if (station) {
+    // connect to Wifi station
+    uint32_t startAttemptTime = millis();
+    // Stop trying on failure timeout, will try to reconnect later by ping
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 5000)  {
+      Serial.print(".");
+      delay(500);
+      Serial.flush();
+    }
+    if (pingHandle == NULL) startPing();
+    debugMemory("startPing");
+  }
+#if CONFIG_IDF_TARGET_ESP32S3
+  setupMdnsHost(); // not on ESP32 as uses 6k of heap
+#endif
+  // show stats of requested SSID
+  int numNetworks = WiFi.scanNetworks();
+  for (int i=0; i < numNetworks; i++) {
+    if (!strcmp(WiFi.SSID(i).c_str(), ST_SSID))
+      LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  ST_SSID, WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
+  }
+  return WiFi.status() == WL_CONNECTED ? true : false;
+}
+
 static void pingSuccess(esp_ping_handle_t hdl, void *args) {
-  static bool dataFilesChecked = false;
   if (!timeSynchronized) getLocalNTP();
   if (!dataFilesChecked) dataFilesChecked = checkDataFiles();
+  doIOextPing();
 }
 
 static void pingTimeout(esp_ping_handle_t hdl, void *args) {
-  esp_ping_stop(pingHandle);
-  esp_ping_delete_session(pingHandle);
   LOG_WRN("Failed to ping gateway, restart wifi ...");
-  startWifi();
+  startWifi(false);
 }
 
 static void startPing() {
-  pingHandle = NULL;
   IPAddress ipAddr = WiFi.gatewayIP();
   ip_addr_t pingDest; 
   IP_ADDR4(&pingDest, ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
@@ -153,7 +208,11 @@ static void startPing() {
   pingConfig.count = ESP_PING_COUNT_INFINITE;
   pingConfig.interval_ms = wifiTimeoutSecs * 1000;
   pingConfig.timeout_ms = 5000;
+#if CONFIG_IDF_TARGET_ESP32S3
+  pingConfig.task_stack_size = 1024 * 6;
+#else
   pingConfig.task_stack_size = 1024 * 4;
+#endif
   pingConfig.task_prio = 1;
   // set ping task callback functions 
   esp_ping_callbacks_t cbs;
@@ -163,15 +222,24 @@ static void startPing() {
   cbs.cb_args = NULL;
   esp_ping_new_session(&pingConfig, &cbs, &pingHandle);
   esp_ping_start(pingHandle);
-  LOG_INF("Started ping monitoring ");
+  LOG_INF("Started ping monitoring");
 }
 
+void stopPing() {
+  if (pingHandle != NULL) {
+    esp_ping_stop(pingHandle);
+    esp_ping_delete_session(pingHandle);
+    pingHandle = NULL;
+  }
+}
 
 /************************** NTP  **************************/
 
-char timezone[64] = "GMT0BST,M3.5.0/01,M10.5.0/02"; 
+// Needs to be a time zone string from: https://raw.githubusercontent.com/nayarsystems/posix_tz_db/master/zones.csv
+char timezone[64] = "GMT0";
+char ntpServer[64] = "pool.ntp.org";
 
-static inline time_t getEpoch() {
+time_t getEpoch() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return tv.tv_sec;
@@ -184,16 +252,20 @@ void dateFormat(char* inBuff, size_t inBuffLen, bool isFolder) {
   else strftime(inBuff, inBuffLen, "/%Y%m%d/%Y%m%d_%H%M%S", localtime(&currEpoch));
 }
 
+static void showLocalTime(const char* timeSrc) {
+  time_t currEpoch = getEpoch();
+  char timeFormat[20];
+  strftime(timeFormat, sizeof(timeFormat), "%d/%m/%Y %H:%M:%S", localtime(&currEpoch));
+  LOG_INF("Got current time from %s: %s with tz: %s", timeSrc, timeFormat, timezone);
+  timeSynchronized = true;
+}
+
 bool getLocalNTP() {
   // get current time from NTP server and apply to ESP32
-  const char* ntpServer = "pool.ntp.org";
+  LOG_INF("Using NTP server: %s", ntpServer);
   configTzTime(timezone, ntpServer);
   if (getEpoch() > 10000) {
-    time_t currEpoch = getEpoch();
-    char timeFormat[20];
-    strftime(timeFormat, sizeof(timeFormat), "%d/%m/%Y %H:%M:%S", localtime(&currEpoch));
-    timeSynchronized = true;
-    LOG_INF("Got current time from NTP: %s", timeFormat);
+    showLocalTime("NTP");    
     return true;
   }
   else {
@@ -202,34 +274,14 @@ bool getLocalNTP() {
   }
 }
 
-void syncToBrowser(const char *val) {
-  if (timeSynchronized) return;
-  
-  // Synchronize clock to browser clock if no sync with NTP
-  LOG_INF("Sync clock to: %s with tz:%s", val, timezone);
-  struct tm now;
-  getLocalTime(&now, 0);
-
-  int Year, Month, Day, Hour, Minute, Second ;
-  sscanf(val, "%d-%d-%dT%d:%d:%d", &Year, &Month, &Day, &Hour, &Minute, &Second);
-
-  struct tm t;
-  t.tm_year = Year - 1900;
-  t.tm_mon  = Month - 1;    // Month, 0 - jan
-  t.tm_mday = Day;          // Day of the month
-  t.tm_hour = Hour;
-  t.tm_min  = Minute;
-  t.tm_sec  = Second;
-
-  time_t t_of_day = mktime(&t);
-  timeval epoch = {t_of_day, 0};
-  struct timezone utc = {0, 0};
-  settimeofday(&epoch, &utc);
-  //setenv("TZ", timezone, 1);
-//  Serial.print(&now, "Before sync: %B %d %Y %H:%M:%S (%A) ");
-  getLocalTime(&now, 0);
-//  Serial.println(&now, "After sync: %B %d %Y %H:%M:%S (%A)");
-  timeSynchronized = true;
+void syncToBrowser(uint32_t browserUTC) {
+  // Synchronize to browser clock if out of sync
+  struct timeval tv;
+  tv.tv_sec = browserUTC;
+  settimeofday(&tv, NULL);
+  setenv("TZ", timezone, 1);
+  tzset();
+  showLocalTime("browser");
 }
 
 void formatElapsedTime(char* timeStr, uint32_t timeVal) {
@@ -262,12 +314,10 @@ bool changeExtension(char* outName, const char* inName, const char* newExt) {
 void showProgress() {
   // show progess as dots if not verbose
   static uint8_t dotCnt = 0;
-////  if (!dbgVerbose) {
-    Serial.print("."); // progress marker
-    if (++dotCnt >= 50) {
-      dotCnt = 0;
-      Serial.println("");
-////    }
+  Serial.print("."); // progress marker
+  if (++dotCnt >= 50) {
+    dotCnt = 0;
+    Serial.println("");
     Serial.flush();
   }
 }
@@ -331,9 +381,16 @@ void checkMemory() {
   LOG_INF("Free: heap %u, block: %u, pSRAM %u", ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
 }
 
-void doRestart(String restartStr) {
+void debugMemory(const char* caller) {
+  if (CHECK_MEM) {
+    delay(FLUSH_DELAY);
+    printf("%s > Free: heap %u, block: %u, pSRAM %u\n", caller, ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL), ESP.getFreePsram());
+  }
+}
+
+void doRestart(const char* restartStr) {
   flush_log(true);
-  LOG_WRN("Controlled restart: %s", restartStr.c_str());
+  LOG_ALT("Controlled restart: %s", restartStr);
   delay(2000);
   ESP.restart();
 }
@@ -353,15 +410,16 @@ float smooth(float latestVal, float smoothedVal, float alpha) {
  * - To clear the log file contents, on log web page press Clear Log link
  */
  
-#define MAX_FMT 1000
-#define MAX_OUT 1100
+#define MAX_OUT 200
 static va_list arglist;
-static char fmtBuf[MAX_FMT];
+static char fmtBuf[MAX_OUT];
 static char outBuf[MAX_OUT];
+char alertMsg[MAX_OUT];
 static TaskHandle_t logHandle = NULL;
 static SemaphoreHandle_t logSemaphore = NULL;
 static SemaphoreHandle_t logMutex = NULL;
 static int logWait = 100; // ms
+bool useLogColors = false;  // true to colorise log messages (eg if using idf.py, but not arduino)
 
 #define LOG_FORMAT_BUF_LEN 512
 #define WRITE_CACHE_CYCLE 5
@@ -382,7 +440,7 @@ void flush_log(bool andClose) {
 }
 
 static void remote_log_init_SD() {
-#ifndef IS_ESP32_C3
+#if !CONFIG_IDF_TARGET_ESP32C3
   SD_MMC.mkdir(DATA_DIR);
   // Open remote file
   log_remote_fp = NULL;
@@ -393,7 +451,7 @@ static void remote_log_init_SD() {
 }
 
 void reset_log() {
-#ifndef IS_ESP32_C3
+#if !CONFIG_IDF_TARGET_ESP32C3
   flush_log(true); // Close log file
   SD_MMC.remove(LOG_FILE_PATH);
   LOG_INF("Cleared log file");
@@ -422,22 +480,30 @@ static void logTask(void *arg) {
 void logPrint(const char *format, ...) {
   // feeds logTask to format message, then outputs as required
   if (xSemaphoreTake(logMutex, logWait / portTICK_PERIOD_MS) == pdTRUE) {
-    strncpy(fmtBuf, format, MAX_FMT);
+    strncpy(fmtBuf, format, MAX_OUT);
+    fmtBuf[MAX_OUT - 1] = 0;
     va_start(arglist, format); 
     vTaskPrioritySet(logHandle, uxTaskPriorityGet(NULL) + 1);
     xTaskNotifyGive(logHandle);
     xSemaphoreTake(logSemaphore, portMAX_DELAY); // wait for logTask to complete        
     // output to monitor console if attached
+    size_t msgLen = strlen(outBuf);
+    if (outBuf[msgLen - 2] == '~') {
+      // set up alert message for browser
+      outBuf[msgLen - 2] = ' ';
+      strncpy(alertMsg, outBuf, MAX_OUT - 1);
+      alertMsg[msgLen - 2] = 0;
+    }
     if (monitorOpen) Serial.print(outBuf); 
     else delay(10); // allow time for other tasks
     // output to SD if file opened
     if (log_remote_fp != NULL) {
-      fwrite(outBuf, sizeof(char), strlen(outBuf), log_remote_fp); // log.txt
+      fwrite(outBuf, sizeof(char), msgLen, log_remote_fp); // log.txt
       // periodic sync to SD
       if (counter_write++ % WRITE_CACHE_CYCLE == 0) fsync(fileno(log_remote_fp));
     }
     // output to web socket if open
-    outBuf[strlen(outBuf) - 1] = 0; // lose final '/n'
+    outBuf[msgLen - 1] = 0; // lose final '/n'
     wsAsyncSend(outBuf);
     delay(FLUSH_DELAY);
     xSemaphoreGive(logMutex);
@@ -447,11 +513,15 @@ void logPrint(const char *format, ...) {
 void logSetup() {
   // prep logging environment
   Serial.begin(115200);
+  Serial.setDebugOutput(false);
+  Serial.println(); 
+  debugMemory("init");
   logSemaphore = xSemaphoreCreateBinary(); // flag that log message formatted
   logMutex = xSemaphoreCreateMutex(); // control access to log formatter
   xSemaphoreGive(logSemaphore);
   xSemaphoreGive(logMutex);
   xTaskCreate(logTask, "logTask", 1024 * 2, NULL, 1, &logHandle);
+  debugMemory("logSetup");
 }
 
 void formatHex(const char* inData, size_t inLen) {
@@ -459,7 +529,14 @@ void formatHex(const char* inData, size_t inLen) {
   char formatted[(inLen * 3) + 1];
   for (int i=0; i<inLen; i++) sprintf(formatted + (i*3), "%02x ", inData[i]);
   formatted[(inLen * 3)] = 0; // terminator
-  LOG_WRN("Hex: %s", formatted);
+  LOG_INF("Hex: %s", formatted);
+}
+
+const char* espErrMsg(esp_err_t errCode) {
+  // convert esp error code to text
+  static char errText[100];
+  esp_err_to_name_r(errCode, errText, 100);
+  return errText;
 }
 
 /****************** base 64 ******************/
@@ -500,7 +577,7 @@ const char* encode64(const char* inp) {
 #include <esp_wifi.h>
 
 void goToSleep(int wakeupPin, bool deepSleep) {
-#ifndef IS_ESP32_C3
+#if !CONFIG_IDF_TARGET_ESP32C3
   // if deep sleep, restarts with reset
   // if light sleep, restarts by continuing this function
   LOG_INF("Going into %s sleep", deepSleep ? "deep" : "light");
