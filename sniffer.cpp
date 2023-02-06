@@ -30,7 +30,7 @@
 
 // s60sc 2022
 
-#include "globals.h"
+#include "appGlobals.h"
 #include "driver/uart.h"
 
 static uint8_t uOffset = 0;  // if UART0 not used for MCU connection e.g ESP32, then UART1 used for MCU and UART2 used for Wifi
@@ -199,7 +199,7 @@ static void configureUart(uart_port_t uartNum) {
     .parity    = UART_PARITY_DISABLE,
     .stop_bits = UART_STOP_BITS_1,
     .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-#ifndef IS_ESP32_C3
+#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
     .source_clk = UART_SCLK_REF_TICK,
 #endif
   };

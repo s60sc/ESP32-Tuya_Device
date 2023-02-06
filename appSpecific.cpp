@@ -3,15 +3,17 @@
 //
 // s60sc 2022
 
-#include "globals.h"
+#include "appGlobals.h"
 
 #define MS_HR (3600 * 1000) // millisecs in hour
+#define SECS_IN_HOUR 3600
 #define KW 1.8 // heating mat kilowatts
 #define TIME_SLOTS 8 // number of time slots in daily schedule
 #define USED_SLOTS 6 // only first 6 slots used for work day
 #define SECS_IN_DAY (24 * 60 * 60) // number of seconds in a day
 #define TGT_TEMP 4 // schedule column containing target temp
 #define SECS_COL 5 // schedule column containing seconds duration
+#define HB_INTERVAL 15 // interval in secs to sent heartbeat to MCU
 
 static bool gotHeartbeat = false;
 static uint32_t heatingElapsed = 0; // total time heating on since startup
@@ -65,6 +67,24 @@ static void sendLocalTime(bool demanded) {
   }
 }
 
+static int getDaily() {
+  static const uint16_t buffSize = (SECS_IN_HOUR / HB_INTERVAL) * 24; // 15 sec intervals in 24 hours
+  static bool usageBuff[buffSize] = {0};
+  static bool cycled = false;
+  static int buffPtr = 0;
+  // add entry to buffer
+  if (buffPtr >= buffSize) {
+    buffPtr = 0;
+    cycled = true;
+  } 
+  usageBuff[buffPtr++] = heatingOn;
+  // calc number of 15 sec slots, extrapolate if less than 24 hours
+  int usageCnt = 0;
+  int buffEnd = cycled ? buffSize : buffPtr;
+  for (int i=0; i<buffEnd; i++) usageCnt += usageBuff[i];
+  return usageCnt * buffSize / buffEnd; 
+}
+
 static void updateStats() {
   // called on heartbeat to update stats
   // calculate uptime
@@ -83,9 +103,13 @@ static void updateStats() {
   formatElapsedTime(timeBuff, (uint32_t)(avgOn));
   updateConfigVect("avgOn", timeBuff+2); // skip over day counter
   // calc avg power per day
-  float kWh = (avgOn / MS_HR) * KW;
+  float kWh = KW * avgOn / MS_HR;
   sprintf(timeBuff, "%0.1fkWh", kWh);
   updateConfigVect("kWh", timeBuff);
+  // calc power use for last 24 hours
+  float kwHday = KW * getDaily() * HB_INTERVAL / SECS_IN_HOUR;
+  sprintf(timeBuff, "%0.1fkWh", kwHday);
+  updateConfigVect("ahr24", timeBuff);
 }
 
 static void checkSchedule() {
@@ -152,7 +176,7 @@ void heartBeat() {
     // send heartbeats, time and wifi status changes
     processTuyaMsg("M 0"); // heartbeat
     // heartbeat interval is 1 per sec until acked then 1 per 15 secs
-    int hbInterval = gotHeartbeat ? 15 : 1;  
+    int hbInterval = gotHeartbeat ? HB_INTERVAL : 1;  
     if (gotHeartbeat) {
       gotHeartbeat = false;
       sendWifiStatus(false);
@@ -435,14 +459,6 @@ bool updateAppStatus(const char* variable, const char* value) {
   return res;
 }
 
-void buildAppJsonString(bool filter) {
-  // build app specific part of json string for MCU status
-  char* p = jsonBuff + 1;
-  *p = 0;
-}
-
-/********* mandatory callbacks *********/
-
 void wsAppSpecificHandler(const char* wsMsg) {
   // message from web socket
   int wsLen = strlen(wsMsg) - 1;
@@ -464,16 +480,29 @@ void wsAppSpecificHandler(const char* wsMsg) {
       // manual request MCU initialisation
       doTuyaInit();
     break;
+    case 'K': 
+      // kill websocket connection
+      killWebSocket();
+    break;
     default: processTuyaMsg(wsMsg); // tuya cmd input
   }
+}
+
+void buildAppJsonString(bool filter) {
+  // build app specific part of json string for MCU status
+  char* p = jsonBuff + 1;
+  *p = 0;
 }
 
 esp_err_t webAppSpecificHandler(httpd_req_t *req, const char* variable, const char* value) {
   return ESP_OK;
 }
 
-void appDataFiles() {
+bool appDataFiles() {
   // callback from setupAssist.cpp, for any app specific files 
+  return true;
 }
 
 void OTAprereq() {} // dummy 
+
+void doIOextPing() {} // dummy

@@ -54,7 +54,7 @@ The Tuya Device web page **Edit Config** tab has the following buttons:
 
 * **Reboot ESP**: Restart the ESP to apply some configuration changes.
 
-* **Reload Spiffs**: Reload the **/data** folder contents from GitHub.
+* **Reload /data**: Reload the **/data** folder contents from GitHub.
 
 * **Clear NVS**: Clear current passwords.
 
