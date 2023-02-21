@@ -505,4 +505,4 @@ bool appDataFiles() {
 
 void OTAprereq() {} // dummy 
 
-void doIOextPing() {} // dummy
+void doAppPing() {} // dummy

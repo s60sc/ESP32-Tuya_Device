@@ -26,7 +26,7 @@
 #define FLUSH_DELAY 0 // for debugging crashes
 
 #define APP_NAME "ESP-TuyaDevice" // max 15 chars
-#define APP_VER "1.2"
+#define APP_VER "1.2.1"
 
 #define MAX_CLIENTS 3 // allowing too many concurrent web clients can cause errors
 #define DATA_DIR "/data"
@@ -58,7 +58,7 @@
 
 #define FILLSTAR "****************************************************************"
 #define DELIM '~'
-#define STORAGE LittleFS // one of: SPIFFS LittleFS SD_MMC 
+#define STORAGE LittleFS // one of: LittleFS SD_MMC 
 #define RAMSIZE (1024 * 8) 
 #define CHUNKSIZE (1024 * 4)
 //#define INCLUDE_FTP 

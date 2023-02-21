@@ -41,8 +41,11 @@ Download GitHub files into the Arduino IDE sketch folder, removing `-main` from 
 Select the required module, eg `ESP32C3 Dev Module`.
 Compile with Partition Scheme: `Minimal SPIFFS (...)`. 
 
-To load the app on the ESP32-C3FN4 for the first time, use a pin compatible ESP8266 Code Burner shown in image above, connecting the IO15 header (for pin GPIO8) to 3V3. Once the app is loaded, OTA can be used subsequently. The application web pages and configuration data file (except passwords) are stored in the **/data** folder on SPIFFS. On first use, the application will start in wifi AP mode to allow router and other details to be entered via the web page. If the **/data** folder is not present, it is downloaded from GitHub.
-Subsequent updates to the application, or to the **/data** folder contents, can be made using the **OTA Upload** button on the  web page. 
+To load the app on the ESP32-C3FN4 for the first time, use a pin compatible ESP8266 Code Burner shown in image above, connecting the IO15 header (for pin GPIO8) to 3V3. 
+
+On first installation, the application will start in wifi AP mode - connect to SSID: **ESP-TuyaDevice_...**, to allow router and password details to be entered via the web page on 192.168.4.1. The application web pages and configuration data file (except passwords) are stored in the **/data** folder which is automatically downloaded to flash from GitHub. The **/data** folder can also be loaded via OTA.
+
+Subsequent updates to the application, or to the **/data** folder contents, can be made using the **OTA Upload** tab. The **/data** folder can also be reloaded from GitHub using the **Reload /data** button on the **Edit Config** tab.
 
 ## Configuration
 
