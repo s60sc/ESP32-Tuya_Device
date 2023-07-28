@@ -209,7 +209,7 @@ static void controlHeating(float mcuTemp) {
   char formatted[10];
   float floorTemp = heatingOn ? baseCal + drift : baseCal - drift; // derive floor temp
   floorTemp += mcuTemp;
-  currentTemp = smooth(floorTemp, currentTemp, alpha); // smooth out floor sensor fluctuation
+  currentTemp = smoothSensor(floorTemp, currentTemp, alpha); // smooth out floor sensor fluctuation
  
   if (heatingOn) {
     // heating on, switch off if target reached
@@ -369,6 +369,8 @@ void processMCUcmd() {
   }
 }
 
+/************************ webServer callbacks *************************/
+
 bool updateAppStatus(const char* variable, const char* value) {
   /* build MCU datapoint command string from input value
      into uint8_t* array and send to MCU using processTuyaMsg(array);
@@ -383,7 +385,8 @@ bool updateAppStatus(const char* variable, const char* value) {
     bool msgReady = true;
     int intVal = atoi(value);
     float fltVal = atof(value);
-    if (!strcmp(variable, "tgtTemp")) sprintf(fp, "2 2 %d", intVal * 10); 
+    if (!strcmp(variable, "custom")) return res;
+    else if (!strcmp(variable, "tgtTemp")) sprintf(fp, "2 2 %d", intVal * 10); 
     else if (!strcmp(variable, "floorMax")) sprintf(fp, "107 2 %d", intVal);
     else if (!strcmp(variable, "tempSensor")) sprintf(fp, "25 4 %u", intVal);
     else if (!strcmp(variable, "progMode")) sprintf(fp, "4 4 %u", intVal);
@@ -503,6 +506,7 @@ bool appDataFiles() {
   return true;
 }
 
-void OTAprereq() {} // dummy 
+void doAppPing() {}
 
-void doAppPing() {} // dummy
+void OTAprereq() {}
+
