@@ -15,7 +15,7 @@ ST_ns2~~0~T~Alt DNS server
 ST_sn~255.255.255.0~0~T~Router subnet
 allowAP~1~0~C~Allow simultaneous AP
 formatIfMountFailed~0~0~C~Format file system on failure
-allowSpaces~0~0~C~Allow whitespace in configs.txt
+timezone~GMT0~0~T~Timezone string: tinyurl.com/TZstring
 alpha~0.2~98~N~na
 avgOn~0~2~D~Average heating time per day
 backLight~2~98~N~na
