@@ -62,3 +62,6 @@ tgtTemp~19.0~98~N~na
 totalOn~0~2~D~Total heating time
 upTime~0~2~D~Elapsed time since restart
 wifiTimeoutSecs~30~0~N~WiFi connect timeout (secs)
+cfgVer~1~99~T~na
+htmVer~1~99~T~na
+jsVer~0~99~T~na
