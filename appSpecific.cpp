@@ -5,6 +5,11 @@
 
 #include "appGlobals.h"
 
+const size_t prvtkey_len = 0;
+const size_t cacert_len = 0;
+const char* prvtkey_pem = "";
+const char* cacert_pem = "";
+
 #define MS_HR (3600 * 1000) // millisecs in hour
 #define SECS_IN_HOUR 3600
 #define KW 1.8 // heating mat kilowatts
@@ -27,6 +32,8 @@ static float baseCal = 0.0;
 static bool heatingOn = false;
 // schedule array format: hours, mins, temp high byte, temp low byte, temp deg C * 10, seconds
 static int schedule[TIME_SLOTS][6];
+bool configLoaded = false;
+static bool devHub = false;
 
 static void wsJsonSend(const char* keyStr, const char* valStr) {
   // output key val pair from MCU and send as json over websocket
@@ -406,6 +413,7 @@ bool updateAppStatus(const char* variable, const char* value) {
     else if (!strcmp(variable, "backLight")) sprintf(fp, "41 4 %u", intVal);  
     else if (!strcmp(variable, "doReset")) sprintf(fp, "31 1 %u", intVal); 
     else if (!strcmp(variable, "doReverse")) sprintf(fp, "101 1 %u", intVal);
+    else if (!strcmp(variable, "devHub")) devHub = (bool)intVal; 
          
     // process updates associated with schedule
     else if (strstr(variable, "slotTime") != NULL) {
@@ -462,7 +470,7 @@ bool updateAppStatus(const char* variable, const char* value) {
   return res;
 }
 
-void wsAppSpecificHandler(const char* wsMsg) {
+void appSpecificWsHandler(const char* wsMsg) {
   // message from web socket
   int wsLen = strlen(wsMsg) - 1;
   switch ((char)wsMsg[0]) {
@@ -485,7 +493,7 @@ void wsAppSpecificHandler(const char* wsMsg) {
     break;
     case 'K': 
       // kill websocket connection
-      killWebSocket();
+      killSocket();
     break;
     default: processTuyaMsg(wsMsg); // tuya cmd input
   }
@@ -497,8 +505,33 @@ void buildAppJsonString(bool filter) {
   *p = 0;
 }
 
-esp_err_t webAppSpecificHandler(httpd_req_t *req, const char* variable, const char* value) {
+esp_err_t appSpecificWebHandler(httpd_req_t *req, const char* variable, const char* value) {
+  // build svg string to provide image for hub
+  if (!strcmp(variable, "svg")) {
+    const char* svgHtml = R"~(
+        <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100%" height="100%" fill="lightgray"/>
+          <text x="50%" y="50%" text-anchor="middle" alignment-baseline="middle" font-size="50">
+    )~";
+    char numStr[10];
+    sprintf(numStr, "%0.1f", currentTemp);
+  
+    httpd_resp_set_type(req, "image/svg+xml");
+    httpd_resp_set_hdr(req, "Content-Disposition", "inline; filename=capture.svg");
+    httpd_resp_sendstr_chunk(req, svgHtml);
+    httpd_resp_sendstr_chunk(req, numStr);  
+    httpd_resp_sendstr_chunk(req, "°C</text></svg>");
+    httpd_resp_sendstr_chunk(req, NULL);
+  }
   return ESP_OK;
+}
+
+esp_err_t appSpecificSustainHandler(httpd_req_t* req) {
+  return ESP_OK;
+}
+
+void externalAlert(const char* subject, const char* message) {
+  // alert any configured external servers
 }
 
 bool appDataFiles() {
@@ -508,5 +541,75 @@ bool appDataFiles() {
 
 void doAppPing() {}
 
-void OTAprereq() {}
+void OTAprereq() {
+  stopPing();
+}
 
+/************** default app configuration **************/
+const char* appConfig = R"~(
+appId~ESP-TuyaDevice~99~~na
+AP_Pass~~0~T~AP password
+AP_gw~~0~T~AP gateway
+AP_ip~~0~T~AP IP Address if not 192.168.4.1
+AP_sn~~0~T~AP subnet
+Auth_Name~~0~T~Optional user name for web page login
+Auth_Pass~~0~T~Optional password for web page login
+ST_SSID~~0~T~Wifi SSID name
+ST_Pass~~0~T~Wifi SSID password
+ST_gw~192.168.1.1~0~T~Router IP address
+ST_ip~192.168.1.162~0~T~Static IP address
+ST_ns1~192.168.1.1~0~T~DNS server
+ST_ns2~~0~T~Alt DNS server
+ST_sn~255.255.255.0~0~T~Router subnet
+allowAP~1~0~C~Allow simultaneous AP
+formatIfMountFailed~0~0~C~Format file system on failure
+timezone~GMT0~0~T~Timezone string: tinyurl.com/TZstring
+logType~1~99~N~Output log selection
+alpha~0.2~98~N~na
+avgOn~0~2~D~Average heating time per day
+backLight~2~98~N~na
+childLock~0~98~C~na
+currTemp~18.8~98~N~na
+daySetting~0~98~S:0:1:2~na
+doReset~0~98~c~na
+drift~3~98~N~na
+fault~0~98~N~na
+floorMax~21~98~N~na
+frost~0~98~C~na
+kWh~0kWh~2~D~Average energy use per day
+opReverse~0~98~C~na
+outputOn~0~98~C~na
+pcntOn~0%~2~D~% time heating on
+ahr24~0kWh~2~D~Last 24 hours energy use
+progMode~1~98~C~na
+restart~~99~T~na
+roomMax~19~98~N~na
+setCtrl~1~98~C~na
+slotTemp1~17~98~N~na
+slotTemp2~19~98~N~na
+slotTemp3~19~98~N~na
+slotTemp4~19~98~N~na
+slotTemp5~19~98~N~na
+slotTemp6~5~98~N~na
+slotTemp7~19~98~N~na
+slotTemp8~5~98~N~na
+slotTime1~08:00~98~N~na
+slotTime2~10:00~98~N~na
+slotTime3~11:30~98~N~na
+slotTime4~12:30~98~N~na
+slotTime5~17:00~98~N~na
+slotTime6~23:30~98~N~na
+slotTime7~10:00~98~N~na
+slotTime8~23:30~98~N~na
+soundOn~1~98~C~na
+switchDisp~1~98~C~na
+tempCal~1~98~N~na
+tempLash~1.0~98~N~na
+tempSensor~1~98~S:0:1:2~na
+tgtTemp~19.0~98~N~na
+totalOn~0~2~D~Total heating time
+upTime~0~2~D~Elapsed time since restart
+wifiTimeoutSecs~30~0~N~WiFi connect timeout (secs)
+devHub~0~0~C~Show Device Hub tab
+usePing~1~0~C~Use ping
+)~";

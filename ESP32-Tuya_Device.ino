@@ -12,20 +12,20 @@ static bool startedUp = false;
 
 void setup() {
   logSetup();
-  startStorage();
- 
-  loadConfig();
+  // prep SD card storage & load saved user configuration
+  if (startStorage()) loadConfig();
+  
 #ifdef DEV_ONLY
   devSetup();
 #endif
   // connect wifi or start config AP if router details not available
   startWifi(); 
+  
   startWebServer();
   if (strlen(startupFailure)) LOG_ERR("%s", startupFailure);
   else {
     prepUarts();
     delay(5000);
-    LOG_INF(APP_NAME " v" APP_VER " ready ...");
     startedUp = true;
     checkMemory();
   }
