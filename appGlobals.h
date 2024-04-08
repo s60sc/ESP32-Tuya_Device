@@ -25,7 +25,7 @@
 /*********************** Fixed defines leave as is ***********************/ 
 /** Do not change anything below here unless you know what you are doing **/
 
-#define DEV_ONLY // leave commented out
+//#define DEV_ONLY // leave commented out
 #define STATIC_IP_OCTAL "163" // dev only
 #define DEBUG_MEM false // leave as false
 #define FLUSH_DELAY 0 // for debugging crashes
