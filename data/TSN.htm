@@ -45,6 +45,8 @@
         --footerSize: calc(var(--bodySize) * 0.7);   
       }
 
+      html body {height: 100%;}
+      
       body {
         font-family: Helvetica  !important;
         background: var(--pageBackground);
@@ -162,6 +164,10 @@
       .grid-cols4 {
         grid-template-columns: calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 6) calc(var(--buttonSize) * 6);
       }
+      
+      .grid-cols4a {
+        grid-template-columns: calc(var(--buttonSize) * 10) calc(var(--buttonSize) * 10) calc(var(--buttonSize) * 10) calc(var(--buttonSize) * 10)
+      }
            
       .grid-cols5 {
         grid-template-columns: calc(var(--buttonSize) * 7) calc(var(--buttonSize) * 7)  calc(var(--buttonSize) * 7) calc(var(--buttonSize) * 7) calc(var(--buttonSize) * 7);
@@ -184,6 +190,17 @@
       
       .grid-cols2a, .grid-cols3a {
         text-align: left;
+      }
+      
+      .grid-cols4a {
+        display: grid;
+        background: none;
+        text-align: center;
+        font-size: var(--inputSize);
+        fill: var(--buttonLabel);
+        border: 0px solid var(--itemBorder);
+        dominant-baseline: middle;
+        text-anchor: middle;
       }
       
       .cfgTitle {
@@ -227,34 +244,6 @@
         overflow: hidden;
       }
       
-      button {
-        display: block;
-        margin: var(--buttonQuart);
-        padding: var(--buttonQuart);
-        border: 0;
-        line-height: var(--headingSize);
-        cursor: pointer;
-        color: var(--buttonText);
-        background: var(--buttonReady);
-        border-radius: var(--buttonQuart);
-        font-size: var(--buttonSize);
-        outline: 0
-      }
-      
-      button:active {
-       box-shadow: 0 0 0 var(--buttonQuart) var(--buttonActive);
-       background: var(--buttonActive);
-      }
-
-      button:hover {
-        background: var(--buttonHover);
-      }
-
-      button:disabled {
-        cursor: default;
-        background: var(--itemInactive)
-      }
-      
       .input-group {
         position: relative;
         display: flex;
@@ -266,23 +255,29 @@
       .input-group>label {
         display: inline-block;
         padding-right: var(--buttonHalf);
-        min-width: calc(var(--buttonSize)*7);
+        font-weight:bold;
       }
       
       .input-group>input {
-          width: 100%;
+        width: 100%;
       }
 
       .input-group input,.input-group select {
         flex-grow: 1
       }
-      
-      input, #applog, #ramlog   {
+
+      input, #appLog {
         font: var(--inputSize) 'Courier New';
         font-weight:bold;
         color: var(--inputText);
         background: var(--inputBackground); 
         min-width: calc(var(--buttonSize) * 10);    
+      }
+      
+      input[type="radio"] {
+        width: var(--inputSize);
+        height: var(--inputSize);
+        min-width: var(--buttonSize);
       }
       
       input[type="radio"], input[type="checkbox"], progress {
@@ -299,13 +294,7 @@
         height : calc(var(--inputSize) * 1.5);
         margin-top: calc(var(--buttonQuart) * -1);
       }
-      
-      input[type="radio"] {
-        width: var(--inputSize);
-        height: var(--inputSize);
-        min-width: var(--buttonSize);
-      }
-      
+
       input[type="number"]:not(.configItem), input[type="time"] {
         font-size: var(--buttonDbl);
         border: 1px solid var(--itemBorder);
@@ -315,59 +304,10 @@
       } 
       
       input[type=number]::-webkit-inner-spin-button {
-        opacity: 1
+        opacity: 1;
       }
       
-
-      /* checkbox toggle switch slider */
-            
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: calc(var(--buttonSize) * 2);
-        height: var(--buttonSize);
-        top: var(--buttonHalf);
-      }
-
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-
-      .slider {
-        position: absolute;
-        border-radius: var(--buttonSize);
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--itemInactive);
-        width: calc(var(--buttonSize) * 3);             
-        transition: .4s;
-      }
-
-      .slider:before {
-        position: absolute;
-        border-radius: 50%;
-        content: "";
-        height: var(--buttonSize);
-        width: var(--buttonSize);
-        left: var(--buttonQuart);
-        background: var(--inputBackground);
-        transition: .4s;
-      }
-
-      input:checked + .slider {
-        background-color: var(--buttonActive);
-      }
-
-      input:checked + .slider:before {
-        transform: translateX(calc(var(--buttonSize)*1.5));
-      }
-      
-      #applog, #ramlog  {
+      #appLog {
         height:50vh;
         width:90%;
         border:2px solid var(--itemBorder);
@@ -406,10 +346,6 @@
         font-size: var(--buttonSize);
       }
 
-      .configGroup td input[type="number"] {
-        font-size: var(--buttonSize);
-      } 
-      
       input.configItem[type="radio"] {
         min-width: var(--buttonSize); 
       }
@@ -419,6 +355,42 @@
         width: calc(var(--buttonSize) * 3); 
       }
       
+     /* checkbox slider */
+
+      /* Hide the default checkbox */
+      .switch input[type="checkbox"] {
+        display: none;
+      }
+
+      /* static part */
+      .switch .slider {
+        width: calc(var(--buttonSize) * 3);  
+        height: var(--buttonSize);
+        top: calc(var(--buttonQuart) / 2);
+        background: var(--itemInactive);
+        position: relative;
+        display: inline-block;
+        border-radius: var(--buttonSize);
+      }
+      .switch input[type="checkbox"]:checked + .slider {
+        background-color: var(--buttonActive);
+      }
+
+      /* moving part */
+      .switch .slider::before {
+        content: "";
+        height: var(--buttonSize);
+        width: var(--buttonSize);
+        background: var(--inputBackground);
+        position: absolute;
+        left: var(--buttonQuart);
+        border-radius: var(--buttonSize);
+        transition: transform 0.4s;
+      }
+      .switch input[type="checkbox"]:checked + .slider::before {
+        transform: translateX(calc(var(--buttonSize)*1.5));
+      }
+
       .svgCols3b {
         width: calc(var(--buttonSize) * 10); 
         height: calc(var(--buttonSize) * 6); 
@@ -474,6 +446,7 @@
         transform: translate(50%,50%); 
       } 
       
+      
     </style>
   </head>
   
@@ -481,45 +454,65 @@
     <div class="tab fixed">
       <button class="tablinks active" name="ShowLog">Show Log</button>
       <button class="tablinks" name="EditConfig">Edit Config</button>
-      <button class="tablinks" name="OTAUpload">OTA Upload</button>
+      <button class="tablinks" name="DeviceHub" style="display: none;">Hub        
+      <a href="/web?OTA.htm"><button class="tablinks">OTA Upload</button></a>
     </div>
     <br><br><br>
-    <div id="ShowLog" class="tabcontent" style="display:block">
+    <div id="ShowLog" class="tabcontent" style="display: inherit;">
       <div class="header">Monitor & Enter Tuya Commands</div>
       <br>
-      <div class="grid-cols2b">
+      <div class="grid-cols4a">
+        <div class="input-group" style="grid-column: span 2">
+          <fieldset> 
+          <legend id="selectLog">Select Log</legend> 
+          <div>
+            <label title="Display RTC RAM log" for="rtcram">RTC RAM</label>
+            <input class="local" id="rtcram" type="radio" name="logType" value="0">
+            <label title="Display Websocket log" for="websock">&nbsp;Websocket</label>
+            <input class="local" id="websock" type="radio" name="logType" value="1" checked>
+          </div>
+          </fieldset>
+        </div>
+        <div class="input-group" id="dbg-group" style="align-items: center; grid-column: span 1">
+          <label for="dbgVerbose" title="Set verbose logging">Verbose:</label>
+          <div class="switch">
+            <input id="dbgVerbose" type="checkbox">
+            <label title="Outputs additional information to log" class="slider" for="dbgVerbose"></label>
+          </div>
+        </div>
+        <div style="grid-column: span 4"><br></div>
         <div>
-          <svg>  
+          <svg>
             <rect/>
-            <text id="clearWSlog" class="midText">Clear Log</text>
+            <text id="refreshLog" class="midText">Refresh Log</text>
+          </svg>
+        </div>
+        <div>
+          <svg>
+            <rect/>
+            <text id="clearLog" class="midText">Clear Log</text>
+          </svg>
+        </div>
+        <div>
+          <svg>
+            <rect/>
+            <text id="save" class="midText">Save</text>
+          </svg>
+        </div>
+        <div>
+          <svg>
+            <rect/>
+            <text id="reset" class="midText">Reboot ESP</text>
           </svg>
         </div>
       </div>
-     <br>
-     <div class="grid-cols1">
+      <div class="grid-cols1">
+        <br>
         <input type='text' style="width:90%;" placeholder="Enter command for device and press return" id='txtCmd'/> 
       </div>
+      <div id="appLog"></div>
       <br>
-      <div id="applog"></div>
-      <br><br>
-      <div class="grid-cols2b">
-        <div>
-          <svg>
-            <rect/>
-            <text class="midText" id="refreshRAMlog">Display RAM Log</text>
-          </svg>
-        </div>
-        <div>
-          <svg>
-            <rect/>
-            <text class="midText" id="clearRAMlog">Clear RAM Log</text>
-          </svg>
-        </div>
-      </div>
-      <br>
-      <div id="ramlog"></div>
-    </div> 
-    <br>
+    </div>
     
     <div id="EditConfig" class="tabcontent">
       <br>
@@ -571,17 +564,19 @@
       </div>
     </div>
            
-    <div id="OTAUpload" class="tabcontent">
-      <br><br>
-      <form id="upload_form" enctype="multipart/form-data" method="post">
-        <input class="local" type="file" name="otafile" id="otafile">
-        <br><br>
-        <progress id="progressOta" value="0" max="100" ></progress>%
-        <div class="subheader" id="status"></div>
-        <p id="loaded_n_total"></p>
-      </form>
+    <div id="DeviceHub" class="tabcontent">
+      <div id="buttonContainer">
+        <!-- Input field for users to enter individual IPs -->
+        <label for="ipInput">Enter IP address:&nbsp;</label>
+        <input type="text" id="ipInput">
+        <button id="addIpButton" onclick="addIP()">Add IP</button>
+        <button id="clearStorageButton" onclick="clearLocalStorage()">Delete All</button>
+        <button id="refreshAllButton" onclick="refreshAllContainers()">Refresh</button>
+      </div>
+      <!-- Container to hold the image elements -->
+      <div id="imageContainer"></div>
     </div>
-        
+    
     <div class="alertMsg">
       <span id="alertText"></span>
     </div>
@@ -589,11 +584,10 @@
     <script>
       'use strict'
       
-      // web server ports, automatically derive from entered port number
-      const webPort = !window.location.port ? "80" : window.location.port;
-      const otaPort = String(+webPort + 1);
-      
       let refreshInterval = 5000;
+      let appClock = Math.ceil(Date.now() / 1000);
+      const appLogInit = 1;
+      const appHub = '/control?svg=1';
       
       function processStatus(dest, key, value, fromUser = true) {
         // process change to status value
@@ -604,18 +598,29 @@
             document.title = value;
             if (fromUser) sendControl(key, value);
           }
-          else if (key == "otafile") otaUploadFile();
           else if (key == "alertMsg") showAlert(value);
-          else if (key == "clearWSlog") $('#applog').innerHTML = "";
-          else if (key == "clearRAMlog") clearRAMlog();
-          else if (key == "refreshRAMlog") getRAMlog();
+          else if (key == "clearLog") clearLog();
+          else if (key == "refreshLog") getLog();
+          else if (key == "logType") { logType = value; sendControl(key, value); return; }
           else if (key == "refreshVal") refreshInterval = value * 1000; 
-          else if (key == "clockUTC") checkTime(value);
-          else if (key == "reset") doMCUreset(fromUser);
+          else if (key == "clockUTC") { appClock = value; checkTime(value); }
+          else if (key == "devHub") return;
           // remaining changes are passed thru to app
           else if (fromUser) sendControl(key, value); 
         }
         else if (dest == CLASS) {}
+      }
+
+
+      
+      function closedTab(isClosed) {}
+      
+      function configStatus(refresh) {
+        if (!refresh) loadStatus("");
+      }
+
+      function customSync() {
+        sendCmd("I"); // sync web page with MCU
       }
       
       /***********************************************/
