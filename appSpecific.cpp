@@ -32,7 +32,7 @@ static float baseCal = 0.0;
 static bool heatingOn = false;
 // schedule array format: hours, mins, temp high byte, temp low byte, temp deg C * 10, seconds
 static int schedule[TIME_SLOTS][6];
-bool configLoaded = false;
+bool uartReady = false;
 static bool devHub = false;
 
 static void wsJsonSend(const char* keyStr, const char* valStr) {
@@ -223,7 +223,7 @@ static void controlHeating(float mcuTemp) {
     if (currentTemp > tgtTemp)  { 
       // force heating off by setting calibration to overstate floor temp   
       LOG_INF("set OFF: current %0.1f, mcu %0.1f, floor %0.1f, calib %0.1f, target %0.1f", currentTemp, mcuTemp, floorTemp, baseCal + drift, tgtTemp); 
-      sprintf(formatted, "%d", (int32_t)((baseCal + drift) * 10));
+      sprintf(formatted, "%ld", (int32_t)((baseCal + drift) * 10));
       updateAppStatus("espCal", formatted);
     }
   } else {
@@ -231,7 +231,7 @@ static void controlHeating(float mcuTemp) {
     if (currentTemp + backLash < tgtTemp)  {
       // force heating on by setting calibration to understate floor temp    
       LOG_INF("set ON: current + backlash %0.1f, mcu %0.1f, floor %0.1f, calib %0.1f, target %0.1f", currentTemp + backLash, mcuTemp, floorTemp, baseCal - drift, tgtTemp);     
-      sprintf(formatted, "%d", (int32_t)((baseCal - drift) * 10));
+      sprintf(formatted, "%ld", (int32_t)((baseCal - drift) * 10));
       updateAppStatus("espCal", formatted);
     }
   }
@@ -301,7 +301,7 @@ static void processDP() {
       } // ignore if ESP is controller
     break;
     case 21: // max room temperature setting [no multiple] 
-      sprintf(formatted, "%u", mcuTuya.tuyaInt);
+      sprintf(formatted, "%ld", mcuTuya.tuyaInt);
       wsJsonSend("roomMax", formatted);
     break;
     case 25: // temp sensor used: 0 = internal, 1 = external, 2 = both 
@@ -336,7 +336,7 @@ static void processDP() {
       wsJsonSend("tempLash", formatted);
     break;
     case 107: // external sensor max temp [no multiple]
-      sprintf(formatted, "%u", mcuTuya.tuyaInt);
+      sprintf(formatted, "%ld", mcuTuya.tuyaInt);
       wsJsonSend("floorMax", formatted);
     break;
     default: LOG_ERR("Unknown datapoint id %u", mcuTuya.tuyaDP);
@@ -402,13 +402,13 @@ bool updateAppStatus(const char* variable, const char* value) {
     else if (!strcmp(variable, "childLock")) sprintf(fp, "8 1 %u", intVal);
     else if (!strcmp(variable, "roomMax")) sprintf(fp, "21 2 %d", intVal);
     else if (!strcmp(variable, "tempCal")) {
-      sprintf(fp, "20 2 %d", (int32_t)(fltVal * 10));
+      sprintf(fp, "20 2 %ld", (int32_t)(fltVal * 10));
       baseCal = fltVal; 
       // if under ESP control, ESP determines calibration setting
       if (ESPcontroller) msgReady = false;
     }
     else if (!strcmp(variable, "espCal")) sprintf(fp, "20 2 %d", intVal); // used for ESP controller
-    else if (!strcmp(variable, "tempLash")) sprintf(fp, "105 2 %d", (int32_t)(fltVal * 10));  
+    else if (!strcmp(variable, "tempLash")) sprintf(fp, "105 2 %ld", (int32_t)(fltVal * 10));  
     else if (!strcmp(variable, "daySetting")) sprintf(fp, "42 4 %u", intVal);  
     else if (!strcmp(variable, "backLight")) sprintf(fp, "41 4 %u", intVal);  
     else if (!strcmp(variable, "doReset")) sprintf(fp, "31 1 %u", intVal); 
@@ -465,24 +465,30 @@ bool updateAppStatus(const char* variable, const char* value) {
       slotCnt = 0;
       msgReady = true;
     } 
-    if (configLoaded && msgReady) processTuyaMsg(formatted);
+    if (uartReady && msgReady) processTuyaMsg(formatted);
   }
   return res;
 }
 
-void appSpecificWsHandler(const char* wsMsg) {
+void appSpecificWsBinHandler(uint8_t* wsMsg, size_t wsMsgLen) {
+  LOG_ERR("Unexpected websocket binary frame");
+}
+
+void appSpecificWsHandler(const char* wsMsg) { 
   // message from web socket
   int wsLen = strlen(wsMsg) - 1;
   switch ((char)wsMsg[0]) {
-    case 'H': 
-      // keepalive heartbeat - ignore
+    case 'X':
     break;
-    case 'S': 
+    case 'H':
+      // keepalive heartbeat
+    break;
+    case 'S':
       // status request
-      buildJsonString(wsLen); // required config number 
+      buildJsonString(wsLen); // required config number
       logPrint("%s\n", jsonBuff);
-    break;   
-    case 'U': 
+    break;
+    case 'U':
       // update or control request
       memcpy(jsonBuff, wsMsg + 1, wsLen); // remove 'U'
       parseJson(wsLen);
@@ -491,7 +497,7 @@ void appSpecificWsHandler(const char* wsMsg) {
       // manual request MCU initialisation
       doTuyaInit();
     break;
-    case 'K': 
+    case 'K':
       // kill websocket connection
       killSocket();
     break;
@@ -506,7 +512,7 @@ void buildAppJsonString(bool filter) {
 }
 
 esp_err_t appSpecificWebHandler(httpd_req_t *req, const char* variable, const char* value) {
-  // build svg string to provide image for hub
+  // build svg string to provide image for hub display
   if (!strcmp(variable, "svg")) {
     const char* svgHtml = R"~(
         <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">

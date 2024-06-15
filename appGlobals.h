@@ -26,7 +26,7 @@
 /** Do not change anything below here unless you know what you are doing **/
 
 //#define DEV_ONLY // leave commented out
-#define STATIC_IP_OCTAL "163" // dev only
+#define STATIC_IP_OCTAL "162" // dev only
 #define DEBUG_MEM false // leave as false
 #define FLUSH_DELAY 0 // for debugging crashes
 #define DBG_ON false // esp debug output
@@ -34,7 +34,7 @@
 #define HOSTNAME_GRP 0
 
 #define APP_NAME "ESP-TuyaDevice" // max 15 chars
-#define APP_VER "1.4"
+#define APP_VER "1.5"
 
 #define HTTP_CLIENTS 2 // http, ws
 #define MAX_STREAMS 0
@@ -95,6 +95,7 @@
 #define UART_STACK_SIZE (1024 * 2)
 
 // task priorities
+#define HTTP_PRI 5
 #define TGRAM_PRI 1
 #define EMAIL_PRI 1
 #define FTP_PRI 1
@@ -121,7 +122,7 @@ void processTuyaMsg(const char* wsMsg) ;
 /******************** Global app declarations *******************/
 
 extern const char* appConfig;
-extern bool configLoaded;
+extern bool uartReady;
 
 /************************** structures ********************************/
 

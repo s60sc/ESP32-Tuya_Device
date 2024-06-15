@@ -97,7 +97,7 @@ static void formatTuya(int uartNum, const byte* tuyaData, size_t tuyaDataLen, bo
         // integer type as 4 byte signed
         else if (tuyaData[7] == 2) {
           int32_t intVal = (tuyaData[10] << 24) | (tuyaData[11] << 16) | (tuyaData[12] << 8) | tuyaData[13];
-          sprintf(formatted + strlen(formatted), "%d ", intVal);
+          sprintf(formatted + strlen(formatted), "%ld ", intVal);
           if (isProcessed) mcuTuya.tuyaInt = intVal;
         }
         // variable length string type
@@ -147,7 +147,7 @@ static void processTuyaByte(int uartNum, byte tuyaByte) {
     if (tuyaHdr == header) {
       // move header to start of buffer
       haveHdr[uartNum] = true;
-      if (tuyaIdx[uartNum] > 2) LOG_DBG("Invalid msg of %u bytes from %s deleted", tuyaIdx[uartNum] - 2, uart[uartNum].uartName);
+      if (tuyaIdx[uartNum] > 2) LOG_VRB("Invalid msg of %u bytes from %s deleted", tuyaIdx[uartNum] - 2, uart[uartNum].uartName);
       memmove(tuyaData[uartNum], tuyaData[uartNum] + tuyaIdx[uartNum] - 2, 2);
       tuyaIdx[uartNum] = 2;
     }
@@ -249,6 +249,7 @@ void prepUarts() {
   } 
   xSemaphoreGive(readMutex);
   xSemaphoreGive(writeMutex);
+  uartReady = true;
 }
 
 static int32_t getNumber(const char* consoleCmd, bool start = false) {

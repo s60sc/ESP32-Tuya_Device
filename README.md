@@ -38,8 +38,9 @@ Once this app has been configured with the specific Tuya DataPoints for the devi
 ## Installation
 
 Download GitHub files into the Arduino IDE sketch folder, removing `-main` from the application folder name.
+
 Select the required module, eg `ESP32C3 Dev Module`.
-Compile with Partition Scheme: `Minimal SPIFFS (...)`. 
+Compile using arduino core v2.x or V3.x with Partition Scheme: `Minimal SPIFFS (...)`. 
 
 To load the app on the ESP32-C3FN4 for the first time, use a pin compatible ESP8266 Code Burner shown in image above, connecting the IO15 header (for pin GPIO8) to 3V3. 
 
