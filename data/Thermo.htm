@@ -212,8 +212,9 @@
         ry: 15%;
       }
       
-      rect:active {
+      .buttonRect:focus {
         fill: var(--buttonActive);
+        outline: none; /* Remove focus outline if not needed */
       }
     
       rect:hover {
@@ -295,6 +296,10 @@
       
       input[type=number]::-webkit-inner-spin-button {
         opacity: 1;
+      }
+      
+      input[type="button"]:focus {
+        background-color: var(--buttonActive);
       }
       
       #appLog {
@@ -773,25 +778,25 @@
         <div style="grid-column: span 4"><br></div>      
         <div>
           <svg>
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="refreshLog" class="midText">Refresh Log</text>
           </svg>
         </div>
         <div>
           <svg>
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="clearLog" class="midText">Clear Log</text>
           </svg>
         </div>
         <div>
           <svg>
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="save" class="midText">Save</text>
           </svg>
         </div>
         <div>
           <svg>
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="reset" class="midText">Reboot ESP</text>
           </svg>
         </div>
@@ -814,21 +819,21 @@
       <div class="grid-cols6">
         <div>
           <svg class="svgCols6">
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="reset" class="upperText">Reboot</text>
             <text class="lowerText">ESP</text>
           </svg>
         </div>
         <div>
           <svg class="svgCols6">
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="deldata" class="upperText">Reload</text>
             <text class="lowerText">/data</text>
           </svg>
         </div>
         <div>
           <svg class="svgCols6">
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="clear" class="upperText">Clear</text>
             <text class="lowerText">NVS</text>
           </svg>
@@ -838,20 +843,20 @@
         <div>&nbsp;</div>
         <div>
           <svg class="svgCols6">
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="wifi" class="upperText">Wifi</text>
             <text class="lowerText">Config</text>
           </svg>
         </div>
         <div>
           <svg class="svgCols6">
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="stats" class="midText">Stats</text>
           </svg>
         </div>
         <div>
           <svg class="svgCols6">
-            <rect/>
+            <rect class="buttonRect" tabindex="0"/>
             <text id="save" class="midText">Save</text>
           </svg>
         </div>
