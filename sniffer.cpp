@@ -258,7 +258,7 @@ static int32_t getNumber(const char* consoleCmd, bool start = false) {
   char* savePtr = endPtr;
   int32_t dataItem = strtol(endPtr, &endPtr, 10); 
   if (endPtr == savePtr) {
-    if (endPtr - consoleCmd < strlen(consoleCmd)) LOG_ERR("Non numeric characters found, %s", consoleCmd);
+    if (endPtr - consoleCmd < strlen(consoleCmd)) LOG_ERR("Non numeric characters found: %s", consoleCmd);
     return LONG_MIN;
   }
   return dataItem;

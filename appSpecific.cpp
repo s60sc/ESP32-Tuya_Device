@@ -378,7 +378,7 @@ void processMCUcmd() {
 
 /************************ webServer callbacks *************************/
 
-bool updateAppStatus(const char* variable, const char* value) {
+bool updateAppStatus(const char* variable, const char* value, bool fromUser) {
   /* build MCU datapoint command string from input value
      into uint8_t* array and send to MCU using processTuyaMsg(array);
      eg processTuyaMsg("M 6 4 4 1"); M = MCU, 6 = DP cmd, 4 = DP id, 4 = data type, 1 = data
@@ -413,7 +413,6 @@ bool updateAppStatus(const char* variable, const char* value) {
     else if (!strcmp(variable, "backLight")) sprintf(fp, "41 4 %u", intVal);  
     else if (!strcmp(variable, "doReset")) sprintf(fp, "31 1 %u", intVal); 
     else if (!strcmp(variable, "doReverse")) sprintf(fp, "101 1 %u", intVal);
-    else if (!strcmp(variable, "devHub")) devHub = (bool)intVal; 
          
     // process updates associated with schedule
     else if (strstr(variable, "slotTime") != NULL) {
@@ -439,21 +438,17 @@ bool updateAppStatus(const char* variable, const char* value) {
       } else LOG_ERR("Invalid schedule slot number %d", slot);
       msgReady = false;
     }
-    // internal (non MCU) commands
-    else if (!strcmp(variable, "alpha")) {
-      alpha = fltVal;
-      msgReady = false;
-    }
-    else if (!strcmp(variable, "drift")) {
-      drift = intVal;
-      msgReady = false;
-    }
     else if (!strcmp(variable, "setCtrl")) {    
       ESPcontroller = (bool)intVal;
       sprintf(fp, "4 4 %u", !ESPcontroller); // set prog mode = 0 (manual) if ESPcontroller else 1 (auto)
       LOG_INF("Control mode switched to %s", ESPcontroller ? "ESP" : "MCU");
     }
     else msgReady = false; // ignore unmatched key
+
+    // internal (non MCU) commands
+    if (!strcmp(variable, "devHub")) devHub = (bool)intVal; 
+    else if (!strcmp(variable, "alpha")) alpha = fltVal;
+    else if (!strcmp(variable, "drift")) drift = intVal;
 
     if (slotCnt >= TIME_SLOTS * 2) {
       // send complete schedule to MCU
