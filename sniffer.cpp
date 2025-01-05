@@ -31,6 +31,9 @@
 // s60sc 2022
 
 #include "appGlobals.h"
+#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 1, 0)
+#error sniffer.cpp must be compiled with arduino-esp32 core v3.1.0 or higher
+#endif
 #include "driver/uart.h"
 
 static uint8_t uOffset = 0;  // if UART0 not used for MCU connection e.g ESP32, then UART1 used for MCU and UART2 used for Wifi
@@ -174,15 +177,15 @@ static void readUart(uart_port_t uartNum) {
     xSemaphoreTake(readMutex, portMAX_DELAY); 
     if (uartEvent[uartNum].type != UART_DATA) {
       xQueueReset(uartQueue[uartNum]);
-      uart_flush_input(uartNum + uOffset);
+      uart_flush_input((uart_port_t)(uartNum + uOffset));
       LOG_ERR("%s uart unexpected event type: %s\n", uart[uartNum].uartName, uartErr[uartEvent[uartNum].type]);
     } else {
       // uart rx data available
       byte tuyaByte[1];
-      while (uart_read_bytes(uartNum + uOffset, tuyaByte, 1, 20 / portTICK_PERIOD_MS)) {
-        uart_port_t otherUart = uartNum ^ 0x01; // flip uart number
+      while (uart_read_bytes((uart_port_t)(uartNum + uOffset), tuyaByte, 1, 20 / portTICK_PERIOD_MS)) {
+        uart_port_t otherUart = (uart_port_t)(uartNum ^ 0x01); // flip uart number
         // forward to other uart if in sniffer mode
-        if (USE_SNIFFER) uart_write_bytes(otherUart + uOffset, tuyaByte, 1);
+        if (USE_SNIFFER) uart_write_bytes((uart_port_t)(otherUart + uOffset), tuyaByte, 1);
         // format for processing
         processTuyaByte(otherUart, tuyaByte[0]);
       }
@@ -205,19 +208,19 @@ static void configureUart(uart_port_t uartNum) {
   };
   
   // install the driver and configure pins
-  uart_driver_install(uartNum + uOffset, BUFF_LEN, BUFF_LEN, QUEUE_SIZE, &uartQueue[uartNum], 0);
-  uart_param_config(uartNum + uOffset, &uart_config);
-  uart_set_pin(uartNum + uOffset, uart[uartNum].txPin, uart[uartNum].rxPin, UART_RTS, UART_CTS);
+  uart_driver_install((uart_port_t)(uartNum + uOffset), BUFF_LEN, BUFF_LEN, QUEUE_SIZE, &uartQueue[uartNum], 0);
+  uart_param_config((uart_port_t)(uartNum + uOffset), &uart_config);
+  uart_set_pin((uart_port_t)(uartNum + uOffset), uart[uartNum].txPin, uart[uartNum].rxPin, UART_RTS, UART_CTS);
 }
 
 static void mcuTask(void *arg) {
   // controlling task for local device MCU
-  while (true) readUart(0); // wait for data to arrive
+  while (true) readUart((uart_port_t)0); // wait for data to arrive
 }
 
 static void wifiTask(void *arg) {
   // controlling task for optional external wifi module 
-  while (true) readUart(1); // wait for data to arrive
+  while (true) readUart((uart_port_t)1); // wait for data to arrive
 }
 
 void prepUarts() {
@@ -241,10 +244,10 @@ void prepUarts() {
     uart_driver_delete(UART_NUM_0);
   } else uOffset = 1;
   
-  configureUart(0);
+  configureUart((uart_port_t)0);
   xTaskCreate(mcuTask, "mcuTask", 1024 * 8, NULL, 2, &mcuHandle);
   if (USE_SNIFFER) {
-    configureUart(1);
+    configureUart((uart_port_t)1);
     xTaskCreate(wifiTask, "wifiTask", 1024 * 4, NULL, 2, &wifiHandle);
   } 
   xSemaphoreGive(readMutex);
@@ -313,7 +316,7 @@ void processTuyaMsg(const char* wsMsg) {
   for (int i = 0; i < idx; i++) tuyaCmd[idx] += tuyaCmd[i]; 
   
   // send tuya command to selected uart
-  int tuyaWrote = uart_write_bytes(uartNum + uOffset, tuyaCmd, idx + 1);
+  int tuyaWrote = uart_write_bytes((uart_port_t)(uartNum + uOffset), tuyaCmd, idx + 1);
   if (tuyaWrote == idx + 1) formatTuya(uartNum, (const byte*)tuyaCmd, tuyaWrote, false);
   else LOG_WRN("Uart %d wrote %d, expected %d", uartNum, tuyaWrote, idx+1);
   xSemaphoreGive(writeMutex);

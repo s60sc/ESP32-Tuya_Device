@@ -32,5 +32,5 @@ void setup() {
 }
 
 void loop() {
-  if (startedUp) heartBeat();
+  startedUp ? heartBeat() : delay(1000);
 }

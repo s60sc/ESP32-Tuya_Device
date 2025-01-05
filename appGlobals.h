@@ -4,6 +4,9 @@
 
 #pragma once
 #include "globals.h"
+#if !CONFIG_IDF_TARGET_ESP32C3
+#error "Must select ESP32C3 module"
+#endif
 
 /******************** User modifiable defines *******************/
 
@@ -17,6 +20,7 @@
 #define USE_UART0 false // true if using ESP as tuya device, else false if used as external wifi module
 
 #define ALLOW_SPACES false // set true to allow whitespace in configs.txt key values
+#define USE_IP6 false
 
 // web server ports
 #define HTTP_PORT 80 // app control
@@ -32,10 +36,9 @@
 #define DBG_ON false // esp debug output
 #define DOT_MAX 50
 #define HOSTNAME_GRP 0
-#define USE_IP6 false
 
 #define APP_NAME "ESP-TuyaDevice" // max 15 chars
-#define APP_VER "1.6"
+#define APP_VER "1.7"
 
 #define HTTP_CLIENTS 2 // http, ws
 #define MAX_STREAMS 0
@@ -66,9 +69,6 @@
 #define INCLUDE_TGRAM false   // telegram.cpp
 #define INCLUDE_CERTS false   // certificates.cpp (https and server certificate checking)
 #define INCLUDE_WEBDAV true  // webDav.cpp (WebDAV protocol)
-
-#define IS_IO_EXTENDER false // must be false except for IO_Extender
-#define EXTPIN 100
 
 // to determine if newer data files need to be loaded
 #define CFG_VER 3
@@ -108,7 +108,7 @@
 #define UART_RTS UART_PIN_NO_CHANGE
 #define UART_CTS UART_PIN_NO_CHANGE
 #define TUYA_BAUD_RATE 9600 
-#define BUFF_LEN UART_FIFO_LEN * 2 // bigger than biggest tuya message
+#define BUFF_LEN (UART_FIFO_LEN * 2) // bigger than biggest tuya message
 
 
 /******************** Function declarations *******************/                                        
