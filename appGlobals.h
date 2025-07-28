@@ -29,8 +29,7 @@
 /*********************** Fixed defines leave as is ***********************/ 
 /** Do not change anything below here unless you know what you are doing **/
 
-//#define DEV_ONLY // leave commented out
-#define STATIC_IP_OCTAL "162" // dev only
+#define STATIC_IP_OCTAL "163" // dev only
 #define DEBUG_MEM false // leave as false
 #define FLUSH_DELAY 0 // for debugging crashes
 #define DBG_ON false // esp debug output
@@ -38,7 +37,7 @@
 #define HOSTNAME_GRP 0
 
 #define APP_NAME "ESP-TuyaDevice" // max 15 chars
-#define APP_VER "1.7"
+#define APP_VER "1.8"
 
 #define HTTP_CLIENTS 2 // http, ws
 #define MAX_STREAMS 0
@@ -103,7 +102,6 @@
 #define LOG_PRI 1
 #define UART_PRI 1
 #define BATT_PRI 1
-#define IDLEMON_PRI 5
 
 #define UART_RTS UART_PIN_NO_CHANGE
 #define UART_CTS UART_PIN_NO_CHANGE

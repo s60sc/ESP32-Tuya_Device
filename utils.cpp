@@ -18,6 +18,7 @@ bool dataFilesChecked = false;
 // allow any startup failures to be reported via browser for remote devices
 char startupFailure[SF_LEN] = {0};
 size_t alertBufferSize = 0;
+size_t maxAlertBuffSize = 32 * 1024;
 byte* alertBuffer = NULL; // buffer for telegram / smtp alert image
 RTC_NOINIT_ATTR uint32_t crashLoop;
 RTC_NOINIT_ATTR char brownoutStatus;
@@ -63,6 +64,7 @@ esp_ping_handle_t pingHandle = NULL;
 bool usePing = true;
 
 static void startPing();
+static void printGpioInfo();
 
 static void setupMdnsHost() {  
   // set up MDNS service 
@@ -886,9 +888,9 @@ void logSetup() {
   boardInfo();
   LOG_INF("Compiled with arduino-esp32 v%s", ESP_ARDUINO_VERSION_STR);
   wakeupResetReason();
-  if (alertBuffer == NULL) alertBuffer = (byte*)ps_malloc(MAX_ALERT); 
+  if (alertBuffer == NULL) alertBuffer = psramFound() ? (byte*)ps_malloc(maxAlertBuffSize) : (byte*)malloc(maxAlertBuffSize); 
   if (jsonBuff == NULL) jsonBuff = psramFound() ? (char*)ps_malloc(JSON_BUFF_LEN) : (char*)malloc(JSON_BUFF_LEN); 
-  debugMemory("logSetup"); 
+  debugMemory("logSetup");
 }
 
 void formatHex(const char* inData, size_t inLen) {
@@ -967,7 +969,7 @@ static const char* getTaskStateString(eTaskState state) {
 static void statsTask(void *arg) { 
   // Output real time task stats periodically
   #define STATS_TASK_PRIO     10
-  #define STATS_INTERVAL      5000
+  #define STATS_INTERVAL      30000 // ms
   #define ARRAY_SIZE_OFFSET   40   // Increase this if ESP_ERR_INVALID_SIZE
 
   static configRUN_TIME_COUNTER_TYPE prevRunCounter = 0;
@@ -1028,14 +1030,19 @@ void runTaskStats() {
 }
 #endif
 
-void checkMemory(const char* source ) {
-  LOG_INF("%s Free: heap %u, block: %u, min: %u, pSRAM %u", source, ESP.getFreeHeap(), ESP.getMaxAllocHeap(), ESP.getMinFreeHeap(), ESP.getFreePsram());
+void checkMemory(const char* source) {
+  LOG_INF("%s Free: heap %u, block: %u, min: %u, pSRAM %u", strlen(source) ? source : "Setup", ESP.getFreeHeap(), ESP.getMaxAllocHeap(), ESP.getMinFreeHeap(), ESP.getFreePsram());
   if (ESP.getFreeHeap() < WARN_HEAP) LOG_WRN("Free heap only %u, min %u", ESP.getFreeHeap(), ESP.getMinFreeHeap());
   if (ESP.getMaxAllocHeap() < WARN_ALLOC) LOG_WRN("Max allocatable heap block is only %u", ESP.getMaxAllocHeap());
+  if (!strlen(source) && DEBUG_MEM) {
+    printGpioInfo();
+    runTaskStats();
+  }
 }
 
 uint32_t checkStackUse(TaskHandle_t thisTask, int taskIdx) {
   // get minimum free stack size for task since started
+  // taskIdx used to index minStack[] array
   static uint32_t minStack[20]; 
   uint32_t freeStack = 0;
   if (thisTask != NULL) {
@@ -1058,6 +1065,35 @@ void debugMemory(const char* caller) {
     logPrint("%s > Free: heap %u, block: %u, min: %u, pSRAM %u\n", caller, ESP.getFreeHeap(), ESP.getMaxAllocHeap(), ESP.getMinFreeHeap(), ESP.getFreePsram());
     delay(FLUSH_DELAY);
   }
+}
+
+#include "esp32-hal-periman.h"
+static void printGpioInfo() {
+  // from https://github.com/espressif/arduino-esp32/blob/master/cores/esp32/chip-debug-report.cpp
+  printf("Assigned GPIO Info:\n");
+  for (uint8_t i = 0; i < SOC_GPIO_PIN_COUNT; i++) {
+    if (!perimanPinIsValid(i)) continue;  //invalid pin
+    peripheral_bus_type_t type = perimanGetPinBusType(i);
+    if (type == ESP32_BUS_TYPE_INIT) continue;  //unused pin
+
+#if defined(BOARD_HAS_PIN_REMAP)
+    int dpin = gpioNumberToDigitalPin(i);
+    if (dpin < 0) continue;  //pin is not exported
+    else printf("  D%-3d|%4u : ", dpin, i);
+#else
+    printf("  %4u : ", i);
+#endif
+    const char *extra_type = perimanGetPinBusExtraType(i);
+    if (extra_type) printf("%s", extra_type);
+    else printf("%s", perimanGetTypeName(type));
+    int8_t bus_number = perimanGetPinBusNum(i);
+    if (bus_number != -1) printf("[%u]", bus_number);
+
+    int8_t bus_channel = perimanGetPinBusChannel(i);
+    if (bus_channel != -1) printf("[%u]", bus_channel);
+    printf("\n");
+  }
+  printf("\n");
 }
 
 

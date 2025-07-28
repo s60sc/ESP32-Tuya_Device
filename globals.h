@@ -4,13 +4,17 @@
 
 #include "esp_arduino_version.h"
 
-#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 3)
-#error Must be compiled with arduino-esp32 core v3.0.3 or higher
+#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 1, 1)
+#error Must be compiled with arduino-esp32 core v3.1.1 or higher
 #endif
 
 #pragma once
+
+//#define DEV_ONLY // leave commented out
+#ifdef DEV_ONLY
 // to compile with -Wall -Werror=all -Wextra
-//#pragma GCC diagnostic error "-Wformat=2"
+#pragma GCC diagnostic error "-Wformat=2"
+#pragma GCC diagnostic ignored "-Wformat-truncation"
 #pragma GCC diagnostic ignored "-Wformat-y2k"
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
@@ -19,6 +23,7 @@
 //#pragma GCC diagnostic ignored "-Wignored-qualifiers"
 //#pragma GCC diagnostic ignored "-Wclass-memaccess"
 #pragma GCC diagnostic ignored "-Wvolatile"
+#endif
 
 /******************** Libraries *******************/
 
@@ -29,7 +34,7 @@
 #include "ping/ping_sock.h"
 #include <Preferences.h>
 #include <regex>
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if (!CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32S2)
 #include <SD_MMC.h>
 #endif
 #include <LittleFS.h>
@@ -131,11 +136,13 @@ char* fmtSize (uint64_t sizeVal);
 void forceCrash();
 void formatElapsedTime(char* timeStr, uint32_t timeVal, bool noDays = false);
 void formatHex(const char* inData, size_t inLen);
+bool formatSDcard();
 bool fsStartTransfer(const char* fileFolder);
 const char* getEncType(int ssidIndex);
 void getExtIP();
 time_t getEpoch();
 size_t getFreeStorage();
+uint32_t getFrequency();
 bool getLocalNTP();
 float getNTCcelsius(uint16_t resistance, float oldTemp);
 void goToSleep(int wakeupPin, bool deepSleep);
@@ -150,6 +157,7 @@ void logPrint(const char *fmtStr, ...);
 void logSetup();
 void OTAprereq();
 bool parseJson(int rxSize);
+bool prepFreq(int maxFreq, int sampleInterval);
 bool prepI2C();
 void prepPeripherals();
 void prepSMTP();
