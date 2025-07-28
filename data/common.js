@@ -275,7 +275,17 @@
           $$('input[type=range]').forEach(el => {rangeSlider(el, false, el.getAttribute('value'));});  // initialise range sliders
         }
 
-        async function sendUpdates(doAction) {    
+        async function sendUpdates(doAction) {
+          // Validate AP_Pass before sending
+          const apPassInput = $('#AP_Pass');
+          if (apPassInput) {
+            const errorMessage = validateApPassword(apPassInput.value.trim());
+            if (errorMessage) {
+              showInputError(apPassInput, errorMessage);
+              showAlert('Cannot save settings: Invalid AP password.');
+              return;
+            }
+          } 
           // send bulk updates to app as json 
           statusData['action'] = doAction;
           const response = await fetch(webServer + '/update', {
@@ -287,6 +297,41 @@
         } 
 
         /*********** utility functions ***********/
+
+        // Function to validate AP password
+        function validateApPassword(password) {
+          const minLength = 8;
+          const maxLength = 63;
+          const validAscii = /^[\x20-\x7E]*$/; // Printable ASCII characters only
+          const strongPassword = /^(?=.*[A-Za-z])(?=.*\d).+$/; // At least one letter and one number
+
+          if (password.length < minLength) {
+            return 'Password must be at least 8 characters long.';
+          }
+          if (password.length > maxLength) {
+            return 'Password cannot exceed 63 characters.';
+          }
+          if (!validAscii.test(password)) {
+            return 'Password must contain only printable ASCII characters.';
+          }
+          if (!strongPassword.test(password)) {
+            return 'Password must include at least one letter and one number.';
+          }
+          return ''; // Valid password
+        }
+
+        // Display error messages below input fields
+        function showInputError(inputEl, errorMessage) {
+          let errorEl = inputEl.nextElementSibling;
+          if (!errorEl || !errorEl.classList.contains('error-message')) {
+            errorEl = document.createElement('div');
+            errorEl.classList.add('error-message');
+            errorEl.style.color = 'red';
+            errorEl.style.fontSize = '0.8em';
+            inputEl.parentElement.appendChild(errorEl);
+          }
+          errorEl.textContent = errorMessage;
+        }
 
         function debounce(func, timeout = 500){
           // debounce rapid clicks to prevent unnecessary fetches
@@ -372,6 +417,16 @@
         }
 
         async function saveChanges() {
+          // Validate AP_Pass before saving
+          const apPassInput = $('#AP_Pass');
+          if (apPassInput) {
+            const errorMessage = validateApPassword(apPassInput.value.trim());
+            if (errorMessage) {
+              showInputError(apPassInput, errorMessage);
+              showAlert('Cannot save settings: Invalid AP password.');
+              return;
+            }
+          }
           // save change and reboot
           await sleep(100);
           sendControl('save', 1);
@@ -468,7 +523,16 @@
             const et = event.target.type;
             // input fields of given class 
             if (e.nodeName == 'INPUT') {
-              if (e.type === 'checkbox') processStatus(ID, e.id, e.checked ? 1 : 0);
+              if (e.id === 'AP_Pass') {
+                // Validate AP password
+                const errorMessage = validateApPassword(value);
+                showInputError(e, errorMessage);
+                // Only send valid passwords
+                if (!errorMessage) {
+                  processStatus(ID, e.id, value);
+                }
+              }
+              else if (e.type === 'checkbox') processStatus(ID, e.id, e.checked ? 1 : 0);
               else if (et === 'button' || et === 'file') processStatus(ID, e.id, 1);
               else if (et === 'radio') { if (e.checked) processStatus(ID, e.name, value); } 
               else if (et === 'range') processStatus(ID, e.id, e.parentElement.children.rangeVal.innerHTML); 
@@ -782,12 +846,13 @@
         }
       }
 
-      function refreshAllContainers() {
+      function refreshAllContainers(uniq = false) {
         const containers = document.querySelectorAll('.ipContainer');
         containers.forEach((container) => {
           const ip = container.querySelector('.ipUrl').textContent;
           const hubImg = container.querySelector('img');
           hubImg.src = `http://${ip}`;
+          if (uniq) hubImg.src += Date.now();
         });
       }
 
@@ -796,9 +861,9 @@
         const ipInput = document.getElementById('ipInput');
         const ipAddresses = localStorage.getItem('enteredIPs') ? JSON.parse(localStorage.getItem('enteredIPs')) : [];
 
-        // Add the entered IP to the array
+        // Add the entered IP to the array if not already present
         let newIP = ipInput.value.trim();
-        if (newIP !== '' && !ipAddresses.includes(newIP)) {
+        if (newIP !== '' && !ipAddresses.some(item => item.includes(newIP))) {
           // if only ip address, add app specific URI
           // for any other app, enter full URL
           if (newIP.indexOf('/') == -1) newIP += appHub;
